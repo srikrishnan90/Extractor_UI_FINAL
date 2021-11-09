@@ -2351,7 +2351,7 @@ color:rgb(255, 255, 255);</string>
        <string notr="true">background:rgba(0, 0, 0,0)</string>
       </property>
       <property name="text">
-       <string>Process Name</string>
+       <string/>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>

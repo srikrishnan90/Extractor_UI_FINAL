@@ -324,7 +324,7 @@ private slots:
     void init_motor();
     void init();
     void uv_timer();
-    void proc_timer(int);
+    void proc_timer();
 
     void on_toolButton_45_clicked();
 

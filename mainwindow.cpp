@@ -9,6 +9,7 @@ static int array_len=0;
 static int timer_val=0;
 static int sub_time_loop=0;
 static int into_pname=0;
+static int proc_countdown=0;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -471,6 +472,13 @@ void MainWindow::on_toolButton_15_clicked()
 void MainWindow::on_toolButton_6_clicked()
 {
     ui->stackedWidget->setCurrentIndex(3);
+    ui->lineEdit_146->clear();
+    ui->lineEdit_147->clear();
+    ui->lineEdit_148->clear();
+    ui->label_14->clear();
+    ui->lineEdit_146->setStyleSheet("QLineEdit{background:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(0,0,0,0))}");
+    ui->lineEdit_147->setStyleSheet("QLineEdit{background:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(0,0,0,0))}");
+    ui->lineEdit_148->setStyleSheet("QLineEdit{background:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(0,0,0,0))}");
     //const QString& s = ui->listWidget->currentItem()->text();
     //ui->label_91->setText(s);
     QString name;
@@ -898,6 +906,8 @@ void MainWindow::on_toolButton_2_clicked()
 {
     ui->stackedWidget->setCurrentIndex(4);
     ui->lineEdit_144->clear();
+    ui->lineEdit_144->setStyleSheet("QLineEdit{background:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(0,0,0,0))}");
+
 }
 
 void MainWindow::on_toolButton_26_clicked()
@@ -2209,14 +2219,18 @@ void MainWindow::processing()
                 QStringList elements = array[0].split(' ');
                 //qDebug()<<elements[0]<<" "<<elements[1];
                 timer_val=elements[1].toInt();
-                proctimer = new QTimer(this);
-                if(array[0].left(3)=="idl")
-                    connect(proctimer, SIGNAL(timeout()), this,SLOT(proc_timer(1)));
-                else if (array[0].left(3)== "mix" || array[0].left(3)== "mis")
-                    connect(proctimer, SIGNAL(timeout()), this,SLOT(proc_timer(2)));
-                else if(array[0].left(3)== "mag")
-                    connect(proctimer, SIGNAL(timeout()), this,SLOT(proc_timer(3)));
-                proctimer->start(1000);
+                if(timer_val>=2)
+                {
+                    proctimer = new QTimer(this);
+                    if(array[0].left(3)=="idl")
+                        proc_countdown=1;
+                    else if (array[0].left(3)== "mix" || array[0].left(3)== "mis")
+                        proc_countdown=2;
+                    else if(array[0].left(3)== "mag")
+                        proc_countdown=3;
+                    connect(proctimer, SIGNAL(timeout()), this,SLOT(proc_timer()));
+                    proctimer->start(1000);
+                }
             }
             else
             {
@@ -2247,47 +2261,50 @@ void MainWindow::processing()
 
 void MainWindow::testing()
 {
-    if(into_pname==1)
+    if(array_len>0)
     {
-        into_pname=0;
-        processing();
-    }
-    else
-    {
-        Pi2c arduino(7);
-        char receive[30];
-        //char cmp[5]="done";
-        //while(strncmp(receive,"done",4)!=0)
-        //{
-        //timer1->stop();
-        QThread::msleep(100);
-        arduino.i2cRead(receive,30);
-        QThread::msleep(100);
-        //timer1->start(1000);
-
-        //QThread::msleep(500);
-        qDebug() << "Arduino Says: " << receive;
-        //qDebug()<<strncmp(receive,"done",4);
-
-        if(strncmp(receive,"done",4)==0)
+        if(into_pname==1)
         {
-            timer->stop();
-            qDebug()<<"timer ended";
-            //call the same function back from here
-            if(array_len>=0)
-            {
-                processing();
-            }
-            else
-            {
-                ui->stackedWidget->setCurrentIndex(0);
-            }
+            into_pname=0;
+            processing();
         }
         else
         {
-            timer->start(500);
+            Pi2c arduino(7);
+            char receive[30];
+            //char cmp[5]="done";
+            //while(strncmp(receive,"done",4)!=0)
+            //{
+            //timer1->stop();
+            QThread::msleep(100);
+            arduino.i2cRead(receive,30);
+            QThread::msleep(100);
+            //timer1->start(1000);
+
+            //QThread::msleep(500);
+            qDebug() << "Arduino Says from testing: " << receive;
+            //qDebug()<<strncmp(receive,"done",4);
+
+            if(strncmp(receive,"done",4)==0)
+            {
+                timer->stop();
+                qDebug()<<"timer ended";
+                //call the same function back from here
+                if(array_len>=0)
+                {
+                    processing();
+                }
+                else
+                {
+                    ui->stackedWidget->setCurrentIndex(0);
+                }
+            }
+            else
+            {
+                timer->start(500);
+            }
+            QThread::msleep(500);
         }
-        QThread::msleep(500);
     }
 }
 
@@ -2314,10 +2331,7 @@ void MainWindow::init_motor()
         QThread::msleep(100);
         arduino.i2cWrite(ch,30);
         QThread::msleep(100);
-
         timer3->start(1000);
-
-
     }
 
 
@@ -2380,10 +2394,12 @@ void MainWindow::on_toolButton_18_clicked()
         QThread::msleep(100);
         arduino1.i2cWrite(ch,30);
         QThread::msleep(100);
-
+        array_len=0;
+        timer->stop();
         timer1->stop();
         timer2->stop();
         timer3->stop();
+        proctimer->stop();
         ui->toolButton_18->setText("Start");
         ui->stackedWidget->setCurrentIndex(0);
     }
@@ -2450,9 +2466,9 @@ void MainWindow::uv_timer()
 
 }
 
-void MainWindow::proc_timer(int val)
+void MainWindow::proc_timer()
 {
-    if(val==1)
+    if(proc_countdown==1)
     {
         int dur=ui->lineEdit_146->text().toInt();
         dur=dur-1;
@@ -2468,10 +2484,10 @@ void MainWindow::proc_timer(int val)
         if(dur<=0)
         {
             proctimer->stop();
-           ui->lineEdit_146->setText(QString::number(0));
+            ui->lineEdit_146->setText(QString::number(0));
         }
     }
-    else if(val==2)
+    else if(proc_countdown==2)
     {
         int dur=ui->lineEdit_147->text().toInt();
         dur=dur-1;
@@ -2486,11 +2502,11 @@ void MainWindow::proc_timer(int val)
         }
         if(dur<=0)
         {
-           proctimer->stop();
-           ui->lineEdit_147->setText(QString::number(0));
+            proctimer->stop();
+            ui->lineEdit_147->setText(QString::number(0));
         }
     }
-    else if(val==3)
+    else if(proc_countdown==3)
     {
         int dur=ui->lineEdit_148->text().toInt();
         dur=dur-1;
@@ -2506,7 +2522,7 @@ void MainWindow::proc_timer(int val)
         if(dur<=0)
         {
             proctimer->stop();
-           ui->lineEdit_148->setText(QString::number(0));
+            ui->lineEdit_148->setText(QString::number(0));
         }
     }
 }
