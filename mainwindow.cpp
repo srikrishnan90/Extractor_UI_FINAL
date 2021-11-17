@@ -16,6 +16,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    setWindowFlags(Qt::FramelessWindowHint);
+
     QSqlDatabase sqdb = QSqlDatabase::addDatabase("QSQLITE");
     sqdb.setDatabaseName("/home/pi/git/ext.db");
     if(!sqdb.open())
@@ -2250,6 +2252,11 @@ void MainWindow::processing()
         {
             timer->start(timer_val*1000);
             //qDebug()<<timer_val*10;
+
+        }
+        else
+        {
+           ui->stackedWidget->setCurrentIndex(0);
         }
     }
     else
@@ -2261,52 +2268,46 @@ void MainWindow::processing()
 
 void MainWindow::testing()
 {
-    if(array_len>0)
+    if(into_pname==1)
     {
-        if(into_pname==1)
+        into_pname=0;
+        processing();
+    }
+    else
+    {
+        Pi2c arduino(7);
+        char receive[30];
+        //char cmp[5]="done";
+        //while(strncmp(receive,"done",4)!=0)
+        //{
+        //timer1->stop();
+        QThread::msleep(100);
+        arduino.i2cRead(receive,30);
+        QThread::msleep(100);
+        //timer1->start(1000);
+
+        //QThread::msleep(500);
+        qDebug() << "Arduino Says from testing: " << receive;
+        //qDebug()<<strncmp(receive,"done",4);
+
+        if(strncmp(receive,"done",4)==0)
         {
-            into_pname=0;
-            processing();
+            timer->stop();
+            qDebug()<<"timer ended";
+            //call the same function back from here
+            if(array_len>=0)
+            {
+                processing();
+            }
         }
         else
         {
-            Pi2c arduino(7);
-            char receive[30];
-            //char cmp[5]="done";
-            //while(strncmp(receive,"done",4)!=0)
-            //{
-            //timer1->stop();
-            QThread::msleep(100);
-            arduino.i2cRead(receive,30);
-            QThread::msleep(100);
-            //timer1->start(1000);
-
-            //QThread::msleep(500);
-            qDebug() << "Arduino Says from testing: " << receive;
-            //qDebug()<<strncmp(receive,"done",4);
-
-            if(strncmp(receive,"done",4)==0)
-            {
-                timer->stop();
-                qDebug()<<"timer ended";
-                //call the same function back from here
-                if(array_len>=0)
-                {
-                    processing();
-                }
-                else
-                {
-                    ui->stackedWidget->setCurrentIndex(0);
-                }
-            }
-            else
-            {
-                timer->start(500);
-            }
-            QThread::msleep(500);
+            timer->start(500);
         }
+        QThread::msleep(500);
     }
 }
+
 
 void MainWindow::init_motor()
 {
@@ -2525,4 +2526,9 @@ void MainWindow::proc_timer()
             ui->lineEdit_148->setText(QString::number(0));
         }
     }
+}
+
+void MainWindow::on_toolButton_7_clicked()
+{
+    qApp->exit();
 }
