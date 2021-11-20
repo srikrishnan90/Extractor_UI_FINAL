@@ -336,6 +336,38 @@ private slots:
 
     void on_toolButton_7_clicked();
 
+    void on_pushButton_167_clicked();
+
+    void on_pushButton_168_clicked();
+
+    void on_pushButton_182_clicked();
+
+    void on_pushButton_183_clicked();
+
+    void on_pushButton_175_clicked();
+
+    void on_pushButton_176_clicked();
+
+    void on_pushButton_172_clicked();
+
+    void on_pushButton_170_clicked();
+
+    void on_pushButton_178_clicked();
+
+    void on_pushButton_180_clicked();
+
+    void on_pushButton_173_clicked();
+
+    void on_pushButton_171_clicked();
+
+    void on_pushButton_179_clicked();
+
+    void on_pushButton_169_clicked();
+
+    void on_pushButton_181_clicked();
+
+    void on_pushButton_177_clicked();
+
 private:
     Ui::MainWindow *ui;
     QTimer *timer, *timer1, *timer2, *timer3, *uvtimer, *proctimer;

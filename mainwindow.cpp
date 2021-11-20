@@ -88,6 +88,7 @@ void MainWindow::on_toolButton_9_clicked()
 void MainWindow::on_toolButton_3_clicked()
 {
     ui->stackedWidget->setCurrentIndex(1);
+    ui->lineEdit->clear();
     ui->comboBox->clear();
     QSqlQuery query;
     //query.prepare("SELECT name FROM sqlite_master WHERE type='table'");
@@ -236,6 +237,57 @@ void MainWindow::on_toolButton_25_clicked()
 
 
     }
+    else
+    {
+        ui->lineEdit_3->clear();
+        ui->lineEdit_14->clear();
+        ui->lineEdit_20->clear();
+        ui->lineEdit_26->clear();
+        ui->lineEdit_32->clear();
+        ui->lineEdit_38->clear();
+        ui->lineEdit_44->clear();
+
+        ui->lineEdit_4->clear();
+        ui->lineEdit_12->clear();
+        ui->lineEdit_18->clear();
+        ui->lineEdit_24->clear();
+        ui->lineEdit_30->clear();
+        ui->lineEdit_36->clear();
+        ui->lineEdit_42->clear();
+
+        ui->lineEdit_8->clear();
+        ui->lineEdit_13->clear();
+        ui->lineEdit_19->clear();
+        ui->lineEdit_25->clear();
+        ui->lineEdit_31->clear();
+        ui->lineEdit_37->clear();
+        ui->lineEdit_43->clear();
+
+        ui->lineEdit_9->clear();
+        ui->lineEdit_15->clear();
+        ui->lineEdit_21->clear();
+        ui->lineEdit_27->clear();
+        ui->lineEdit_33->clear();
+        ui->lineEdit_39->clear();
+        ui->lineEdit_45->clear();
+
+        ui->lineEdit_10->clear();
+        ui->lineEdit_16->clear();
+        ui->lineEdit_22->clear();
+        ui->lineEdit_28->clear();
+        ui->lineEdit_34->clear();
+        ui->lineEdit_40->clear();
+        ui->lineEdit_46->clear();
+
+        ui->lineEdit_11->clear();
+        ui->lineEdit_17->clear();
+        ui->lineEdit_23->clear();
+        ui->lineEdit_29->clear();
+        ui->lineEdit_35->clear();
+        ui->lineEdit_41->clear();
+        ui->lineEdit_47->clear();
+
+    }
 
 
     QByteArray bytes = name.toUtf8();
@@ -252,7 +304,9 @@ void MainWindow::on_toolButton_25_clicked()
         }
         if(cmpstat==1)
         {
-            msg.setText("Name Exists");
+            msg.setText("Experiment Already Exists");
+            msg.setWindowTitle("Warning");
+            msg.setStyleSheet("QLabel{min-width:500 px; font-size: 24px;} QPushButton{ width:200px; height:50px; font-size: 18px; }");
             msg.exec();
         }
         else
@@ -260,7 +314,9 @@ void MainWindow::on_toolButton_25_clicked()
     }
 
     else {
-        msg.setText("Empty Name");
+        msg.setText("Empty Experiment Name");
+        msg.setWindowTitle("Warning");
+        msg.setStyleSheet("QLabel{min-width:500 px; font-size: 24px;} QPushButton{ width:200px; height:50px; font-size: 18px; }");
         msg.exec();
     }
 
@@ -2416,6 +2472,7 @@ void MainWindow::on_toolButton_43_clicked()
     if(s=="Turn ON UV LAMP")
     {
         ui->toolButton_43->setText("Turn OFF UV LAMP");
+        ui->toolButton->setDisabled(true);
         Pi2c arduino(7);
         QString data="UVN "+uvdur;
         char* ch;
@@ -2442,6 +2499,8 @@ void MainWindow::on_toolButton_43_clicked()
         uvtimer->stop();
         ui->toolButton_43->setText("Turn ON UV LAMP");
         ui->stackedWidget->setCurrentIndex(0);
+        ui->toolButton->setDisabled(false);
+
     }
 
 
@@ -2464,6 +2523,7 @@ void MainWindow::uv_timer()
     {
         uvtimer->stop();
         ui->toolButton_43->setText("Turn ON UV LAMP");
+        ui->toolButton->setDisabled(false);
         ui->stackedWidget->setCurrentIndex(0);
     }
 
@@ -2533,4 +2593,97 @@ void MainWindow::proc_timer()
 void MainWindow::on_toolButton_7_clicked()
 {
     qApp->exit();
+}
+
+void MainWindow::on_pushButton_167_clicked()
+{
+    ui->stackedWidget_2->setCurrentIndex(3);
+
+}
+
+void MainWindow::on_pushButton_168_clicked()
+{
+    ui->stackedWidget_2->setCurrentIndex(3);
+}
+
+void MainWindow::on_pushButton_182_clicked()
+{
+    ui->stackedWidget_2->setCurrentIndex(0);
+}
+
+void MainWindow::on_pushButton_183_clicked()
+{
+    ui->stackedWidget_2->setCurrentIndex(2);
+}
+
+void MainWindow::on_pushButton_175_clicked()
+{
+    ui->lineEdit_145->backspace();
+
+}
+
+void MainWindow::on_pushButton_176_clicked()
+{
+    on_pushButton_26_clicked();
+
+}
+
+void MainWindow::on_pushButton_172_clicked()
+{
+    ui->lineEdit_145->setText(ui->lineEdit_145->text()+ui->pushButton_172->text());
+
+}
+
+void MainWindow::on_pushButton_170_clicked()
+{
+    ui->lineEdit_145->setText(ui->lineEdit_145->text()+ui->pushButton_170->text());
+
+}
+
+void MainWindow::on_pushButton_178_clicked()
+{
+    ui->lineEdit_145->setText(ui->lineEdit_145->text()+ui->pushButton_178->text());
+
+}
+
+void MainWindow::on_pushButton_180_clicked()
+{
+    ui->lineEdit_145->setText(ui->lineEdit_145->text()+ui->pushButton_180->text());
+
+}
+
+void MainWindow::on_pushButton_173_clicked()
+{
+    ui->lineEdit_145->setText(ui->lineEdit_145->text()+ui->pushButton_173->text());
+
+}
+
+void MainWindow::on_pushButton_171_clicked()
+{
+    ui->lineEdit_145->setText(ui->lineEdit_145->text()+"&");
+
+}
+
+void MainWindow::on_pushButton_179_clicked()
+{
+    ui->lineEdit_145->setText(ui->lineEdit_145->text()+ui->pushButton_179->text());
+
+}
+
+void MainWindow::on_pushButton_169_clicked()
+{
+    ui->lineEdit_145->setText(ui->lineEdit_145->text()+ui->pushButton_169->text());
+
+}
+
+void MainWindow::on_pushButton_181_clicked()
+{
+    ui->lineEdit_145->setText(ui->lineEdit_145->text()+ui->pushButton_181->text());
+
+}
+
+void MainWindow::on_pushButton_177_clicked()
+{
+    ui->lineEdit_145->setText(ui->lineEdit_145->text()+ui->pushButton_177->text());
+
 }
