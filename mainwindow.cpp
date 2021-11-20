@@ -48,6 +48,7 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->listWidget->addItem(query.value(0).toString());
         //i++;
     }
+    ui->listWidget->setCurrentRow(0);
     int fd = wiringPiI2CSetup(DEVICE_ID);
     qDebug()<<fd<<DEVICE_ID;
     if (fd == -1) {
@@ -304,6 +305,7 @@ void MainWindow::on_toolButton_25_clicked()
         }
         if(cmpstat==1)
         {
+
             msg.setText("Experiment Already Exists");
             msg.setWindowTitle("Warning");
             msg.setStyleSheet("QLabel{min-width:500 px; font-size: 24px;} QPushButton{ width:200px; height:50px; font-size: 18px; }");
@@ -1995,19 +1997,35 @@ void MainWindow::on_toolButton_5_clicked()
 {
     QString selitem;
     selitem=ui->listWidget->currentItem()->text();
-    //qDebug()<<selitem;
-    QSqlQuery query;
-    query.prepare("delete FROM DNA where name=:name");
-    query.bindValue(":name",selitem);
-    query.exec();
+    QString txt="Confirm Delete "+selitem;
 
-    query.prepare("SELECT name FROM DNA");
-    query.exec();
-    ui->listWidget->clear();
-    while(query.next())
+    QMessageBox msgBox;
+    //msgBox.setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
+    msgBox.setWindowTitle("Warning...");
+    msgBox.setText(txt);
+    msgBox.setStandardButtons(msgBox.Yes);
+    msgBox.addButton(msgBox.No);
+    msgBox.setStyleSheet("QLabel{min-width:500 px; font-size: 24px;} QPushButton{ width:200px; height:50px; font-size: 18px; }");
+    if(msgBox.exec() == msgBox.Yes)
     {
-        ui->listWidget->addItem(query.value(0).toString());
+        QSqlQuery query;
+        query.prepare("delete FROM DNA where name=:name");
+        query.bindValue(":name",selitem);
+        query.exec();
+
+        query.prepare("SELECT name FROM DNA");
+        query.exec();
+        ui->listWidget->clear();
+        while(query.next())
+        {
+            ui->listWidget->addItem(query.value(0).toString());
+        }
     }
+    else
+    {
+        // do something else
+    }
+
 }
 
 void MainWindow::on_toolButton_4_clicked()
@@ -2203,6 +2221,9 @@ void MainWindow::processing()
                 ui->lineEdit_146->setText(query.value(0).toString());
                 ui->lineEdit_147->setText(query.value(1).toString());
                 ui->lineEdit_148->setText(query.value(2).toString());
+                ui->lineEdit_146->setStyleSheet("QLineEdit{background:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(0,0,0,0))}");
+                ui->lineEdit_147->setStyleSheet("QLineEdit{background:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(0,0,0,0))}");
+                ui->lineEdit_148->setStyleSheet("QLineEdit{background:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(0,0,0,0))}");
             }
             sub_time_loop=sub_time_loop+1;
             for(int i=0;i<array_len;i++)
@@ -2312,8 +2333,8 @@ void MainWindow::processing()
         }
         else
         {
-           ui->stackedWidget->setCurrentIndex(0);
-           ui->toolButton_18->setText("Start");
+            ui->stackedWidget->setCurrentIndex(0);
+            ui->toolButton_18->setText("Start");
 
         }
     }
@@ -2436,31 +2457,46 @@ void MainWindow::on_toolButton_18_clicked()
     }
     else if(s=="Stop")
     {
-        Pi2c arduino(7);
-        QString data="stp";
-        char* ch;
-        QByteArray ba=data.toLatin1();
-        ch=ba.data();
-        QThread::msleep(100);
-        arduino.i2cWrite(ch,30);
-        QThread::msleep(100);
+        QMessageBox msgBox;
+        //msgBox.setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
+        msgBox.setWindowTitle("Warning...");
+        msgBox.setText("Confirm Stop the experiment");
+        msgBox.setStandardButtons(msgBox.Yes);
+        msgBox.addButton(msgBox.No);
+        msgBox.setStyleSheet("QLabel{min-width:500 px; font-size: 24px;} QPushButton{ width:200px; height:50px; font-size: 18px; }");
+        if(msgBox.exec() == msgBox.Yes)
+        {
+            Pi2c arduino(7);
+            QString data="stp";
+            char* ch;
+            QByteArray ba=data.toLatin1();
+            ch=ba.data();
+            QThread::msleep(100);
+            arduino.i2cWrite(ch,30);
+            QThread::msleep(100);
 
 
-        Pi2c arduino1(8);
-        data="W 0 0 0 0 0 0 0 0";
-        ba=data.toLatin1();
-        ch=ba.data();
-        QThread::msleep(100);
-        arduino1.i2cWrite(ch,30);
-        QThread::msleep(100);
-        array_len=0;
-        timer->stop();
-        timer1->stop();
-        timer2->stop();
-        timer3->stop();
-        proctimer->stop();
-        ui->toolButton_18->setText("Start");
-        ui->stackedWidget->setCurrentIndex(0);
+            Pi2c arduino1(8);
+            data="W 0 0 0 0 0 0 0 0";
+            ba=data.toLatin1();
+            ch=ba.data();
+            QThread::msleep(100);
+            arduino1.i2cWrite(ch,30);
+            QThread::msleep(100);
+            array_len=0;
+            timer->stop();
+            timer1->stop();
+            timer2->stop();
+            timer3->stop();
+            proctimer->stop();
+            ui->toolButton_18->setText("Start");
+            ui->stackedWidget->setCurrentIndex(0);
+        }
+        else
+        {
+
+        }
+
     }
 
 }
