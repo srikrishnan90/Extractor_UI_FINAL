@@ -2136,8 +2136,8 @@ void MainWindow::processing()
                 query.prepare("select wait4,mix4,mag4 FROM DNA where name=:name");
             else if(sub_time_loop==5)
                 query.prepare("select wait5,mix5,mag5 FROM DNA where name=:name");
-            else if(sub_time_loop==7)
-                query.prepare("select wait6,mix6,mag7 FROM DNA where name=:name");
+            else if(sub_time_loop==6)
+                query.prepare("select wait6,mix6,mag6 FROM DNA where name=:name");
             else if(sub_time_loop==7)
                 query.prepare("select wait7,mix7,mag7 FROM DNA where name=:name");
             query.bindValue(":name",name);
@@ -2257,6 +2257,8 @@ void MainWindow::processing()
         else
         {
            ui->stackedWidget->setCurrentIndex(0);
+           ui->toolButton_18->setText("Start");
+
         }
     }
     else
