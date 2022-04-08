@@ -10,6 +10,8 @@
 #include "pi2c.h"
 #include <QThread>
 #include <QTimer>
+#include <QScrollBar>
+#include <QMovie>
 
 #define DEVICE_ID 0x18
 
@@ -325,6 +327,8 @@ private slots:
     void init();
     void uv_timer();
     void proc_timer();
+    void proc_timer1();
+    void motor_test();
 
     void on_toolButton_45_clicked();
 
@@ -368,9 +372,27 @@ private slots:
 
     void on_pushButton_177_clicked();
 
+    void on_toolButton_47_clicked();
+
+    void on_toolButton_8_clicked();
+
+    void on_pushButton_10_clicked();
+
+    void on_pushButton_35_clicked();
+
+    void on_pushButton_36_clicked();
+
+    void on_toolButton_48_clicked();
+
+    void on_toolButton_49_clicked();
+
+    void on_pushButton_37_clicked();
+
+
+
 private:
     Ui::MainWindow *ui;
-    QTimer *timer, *timer1, *timer2, *timer3, *uvtimer, *proctimer;
+    QTimer *timer, *timer1, *timer2, *timer3, *uvtimer, *proctimer, *proctimer1, *mtesttimer;
 };
 
 #endif // MAINWINDOW_H

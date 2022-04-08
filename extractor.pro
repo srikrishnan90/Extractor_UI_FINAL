@@ -44,3 +44,6 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 INCLUDEPATH    += /usr/local/include
 LIBS += -L/usr/local/lib -lwiringPi -liir
 
+RESOURCES += \
+    extqrc.qrc
+

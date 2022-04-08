@@ -4,12 +4,14 @@
 #include <QPushButton>
 static int opt=0;
 static int from_edit=0;
-static QString array[72]={""};
+static QString array[80]={""};
 static int array_len=0;
 static int timer_val=0;
 static int sub_time_loop=0;
 static int into_pname=0;
 static int proc_countdown=0;
+static int proc1_countdown=0;
+static int total_time=0;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -28,11 +30,13 @@ MainWindow::MainWindow(QWidget *parent) :
     else
     {
         // qDebug() << "Connected Successfully to DB !";
-        ui->label_4->setText("DB Successful");
+        ui->label_4->setText("Initialization Successful");
     }
     ui->stackedWidget->setCurrentIndex(6);
     ui->label_93->hide();
     ui->label_94->hide();
+    ui->toolButton->hide();
+    ui->toolButton_2->hide();
     QSqlQuery query;
     //query.prepare("SELECT name FROM sqlite_master WHERE type='table'");
     query.prepare("SELECT name FROM DNA");
@@ -49,6 +53,10 @@ MainWindow::MainWindow(QWidget *parent) :
         //i++;
     }
     ui->listWidget->setCurrentRow(0);
+    //ui->listWidget->setVerticalScrollBar(ui->verticalScrollBar);
+    //ui->listWidget->setStyleSheet("QScrollBar:vertical { width: 60px; }");
+    ui->listWidget->verticalScrollBar()->setStyleSheet("QScrollBar:vertical { width: 60px; border:5px solid black;}");
+    //QScrollBar::handle{background : pink;}");
     int fd = wiringPiI2CSetup(DEVICE_ID);
     qDebug()<<fd<<DEVICE_ID;
     if (fd == -1) {
@@ -61,11 +69,23 @@ MainWindow::MainWindow(QWidget *parent) :
     timer1 = new QTimer(this);
     timer2 = new QTimer(this);
     timer3 = new QTimer(this);
+    proctimer = new QTimer(this);
+    proctimer1 = new QTimer(this);
+    mtesttimer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this,SLOT(testing()));
     connect(timer1, SIGNAL(timeout()), this,SLOT(realtime_temperature()));
     connect(timer2, SIGNAL(timeout()), this,SLOT(init_motor()));
     connect(timer3, SIGNAL(timeout()), this,SLOT(init()));
+    connect(proctimer, SIGNAL(timeout()), this,SLOT(proc_timer()));
+    connect(proctimer1, SIGNAL(timeout()), this,SLOT(proc_timer1()));
+    connect(mtesttimer, SIGNAL(timeout()), this,SLOT(motor_test()));
+
     timer2->start(1000);
+    QMovie *movie = new QMovie("/home/pi/git/extractor/icons/animation.gif");
+    ui->label_18->setMovie(movie);
+    movie->start();
+
+    ui->label_35->hide();
 
 }
 
@@ -119,6 +139,8 @@ void MainWindow::on_pushButton_110_clicked()
 
 void MainWindow::on_toolButton_25_clicked()
 {
+    ui->toolButton->hide();
+    ui->toolButton_2->hide();
     QMessageBox msg;
     QString temp, name;
 
@@ -235,6 +257,19 @@ void MainWindow::on_toolButton_25_clicked()
             ui->lineEdit_41->setText(query.value(5).toString());
             ui->lineEdit_47->setText(query.value(6).toString());
         }
+        query.prepare("select temp11,temp21,temp31,temp41,temp51,temp61,temp71 FROM DNA where name=:name");
+        query.bindValue(":name",temp);
+        query.exec();
+        while(query.next())
+        {
+            ui->comboBox_21->setCurrentIndex(query.value(0).toInt());
+            ui->comboBox_22->setCurrentIndex(query.value(1).toInt());
+            ui->comboBox_36->setCurrentIndex(query.value(2).toInt());
+            ui->comboBox_37->setCurrentIndex(query.value(3).toInt());
+            ui->comboBox_38->setCurrentIndex(query.value(4).toInt());
+            ui->comboBox_39->setCurrentIndex(query.value(5).toInt());
+            ui->comboBox_40->setCurrentIndex(query.value(6).toInt());
+        }
 
 
     }
@@ -328,15 +363,18 @@ void MainWindow::on_toolButton_25_clicked()
 
 void MainWindow::on_toolButton_16_clicked()
 {
+    ui->toolButton->setVisible(true);
+    ui->toolButton_2->setVisible(true);
     ui->stackedWidget->setCurrentIndex(0);
+    ui->listWidget->setCurrentRow(0);
     QString name,p1name,p2name,p3name,p4name,p5name,p6name,p7name;
-    int p1pos,p1wait,p1mix,p1mag,p1vol,p1spd,p1temp;
-    int p2pos,p2wait,p2mix,p2mag,p2vol,p2spd,p2temp;
-    int p3pos,p3wait,p3mix,p3mag,p3vol,p3spd,p3temp;
-    int p4pos,p4wait,p4mix,p4mag,p4vol,p4spd,p4temp;
-    int p5pos,p5wait,p5mix,p5mag,p5vol,p5spd,p5temp;
-    int p6pos,p6wait,p6mix,p6mag,p6vol,p6spd,p6temp;
-    int p7pos,p7wait,p7mix,p7mag,p7vol,p7spd,p7temp;
+    int p1pos,p1wait,p1mix,p1mag,p1vol,p1spd,p1temp,p11temp;
+    int p2pos,p2wait,p2mix,p2mag,p2vol,p2spd,p2temp,p21temp;
+    int p3pos,p3wait,p3mix,p3mag,p3vol,p3spd,p3temp,p31temp;
+    int p4pos,p4wait,p4mix,p4mag,p4vol,p4spd,p4temp,p41temp;
+    int p5pos,p5wait,p5mix,p5mag,p5vol,p5spd,p5temp,p51temp;
+    int p6pos,p6wait,p6mix,p6mag,p6vol,p6spd,p6temp,p61temp;
+    int p7pos,p7wait,p7mix,p7mag,p7vol,p7spd,p7temp,p71temp;
 
     name=ui->lineEdit->text();
     p1name=ui->lineEdit_3->text();
@@ -402,6 +440,15 @@ void MainWindow::on_toolButton_16_clicked()
     p5temp=ui->lineEdit_35->text().toInt();
     p6temp=ui->lineEdit_41->text().toInt();
     p7temp=ui->lineEdit_47->text().toInt();
+
+    p11temp=ui->comboBox_21->currentIndex();
+    p21temp=ui->comboBox_22->currentIndex();
+    p31temp=ui->comboBox_36->currentIndex();
+    p41temp=ui->comboBox_37->currentIndex();
+    p51temp=ui->comboBox_38->currentIndex();
+    p61temp=ui->comboBox_39->currentIndex();
+    p71temp=ui->comboBox_40->currentIndex();
+    qDebug()<<p11temp<<p21temp<<p31temp;
 
 
     QSqlQuery query;
@@ -512,6 +559,17 @@ void MainWindow::on_toolButton_16_clicked()
     query.bindValue(":name",name);
     query.exec();
 
+    query.prepare("update DNA set temp11=:p11temp,temp21=:p21temp,temp31=:p31temp,temp41=:p41temp,temp51=:p51temp,temp61=:p61temp,temp71=:p71temp where name=:name");
+    query.bindValue(":p11temp",p11temp);
+    query.bindValue(":p21temp",p21temp);
+    query.bindValue(":p31temp",p31temp);
+    query.bindValue(":p41temp",p41temp);
+    query.bindValue(":p51temp",p51temp);
+    query.bindValue(":p61temp",p61temp);
+    query.bindValue(":p71temp",p71temp);
+    query.bindValue(":name",name);
+    query.exec();
+
 
 
     query.prepare("SELECT name FROM DNA");
@@ -521,12 +579,17 @@ void MainWindow::on_toolButton_16_clicked()
     {
         ui->listWidget->addItem(query.value(0).toString());
     }
+    ui->listWidget->setCurrentRow(0);
+
 
 }
 
 void MainWindow::on_toolButton_15_clicked()
 {
     ui->stackedWidget->setCurrentIndex(0);
+    ui->listWidget->setCurrentRow(0);
+    ui->toolButton->setVisible(true);
+    ui->toolButton_2->setVisible(true);
 }
 
 void MainWindow::on_toolButton_6_clicked()
@@ -536,9 +599,10 @@ void MainWindow::on_toolButton_6_clicked()
     ui->lineEdit_147->clear();
     ui->lineEdit_148->clear();
     ui->label_14->clear();
-    ui->lineEdit_146->setStyleSheet("QLineEdit{background:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(0,0,0,0))}");
-    ui->lineEdit_147->setStyleSheet("QLineEdit{background:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(0,0,0,0))}");
-    ui->lineEdit_148->setStyleSheet("QLineEdit{background:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(0,0,0,0))}");
+    ui->lineEdit_146->setStyleSheet("QLineEdit{background-color:rgb(255, 255, 255);}");
+    ui->lineEdit_147->setStyleSheet("QLineEdit{background-color:rgb(255, 255, 255);}");
+    ui->lineEdit_148->setStyleSheet("QLineEdit{background-color:rgb(255, 255, 255);}");
+    ui->label_18->hide();
     //const QString& s = ui->listWidget->currentItem()->text();
     //ui->label_91->setText(s);
     QString name;
@@ -547,11 +611,11 @@ void MainWindow::on_toolButton_6_clicked()
     //qDebug()<<selitem;
     QSqlQuery query;
     //step 1
-    query.prepare("select pname1,well1,wait1,mix1,mag1,vol1,spd1,temp1 FROM DNA where name=:name");
+    query.prepare("select pname1,well1,wait1,mix1,mag1,vol1,spd1,temp1,temp11 FROM DNA where name=:name");
     query.bindValue(":name",name);
     query.exec();
     QString processname1;
-    int pos1,wait1,mix1,mag1,vol1,spd1,temp1;
+    int pos1=0,wait1=0,mix1=0,mag1=0,vol1=0,spd1=0,temp1=0,temp11=0;
     while(query.next())
     {
         processname1=query.value(0).toString();
@@ -562,13 +626,14 @@ void MainWindow::on_toolButton_6_clicked()
         vol1=query.value(5).toInt();
         spd1=query.value(6).toInt();
         temp1=query.value(7).toInt();
+        temp11=query.value(8).toInt();
     }
     //step 2
-    query.prepare("select pname2,well2,wait2,mix2,mag2,vol2,spd2,temp2 FROM DNA where name=:name");
+    query.prepare("select pname2,well2,wait2,mix2,mag2,vol2,spd2,temp2,temp21 FROM DNA where name=:name");
     query.bindValue(":name",name);
     query.exec();
     QString processname2;
-    int pos2,wait2,mix2,mag2,vol2,spd2,temp2;
+    int pos2=0,wait2=0,mix2=0,mag2=0,vol2=0,spd2=0,temp2=0,temp21=0;
     while(query.next())
     {
         processname2=query.value(0).toString();
@@ -579,13 +644,14 @@ void MainWindow::on_toolButton_6_clicked()
         vol2=query.value(5).toInt();
         spd2=query.value(6).toInt();
         temp2=query.value(7).toInt();
+        temp21=query.value(8).toInt();
     }
     //step 3
-    query.prepare("select pname3,well3,wait3,mix3,mag3,vol3,spd3,temp3 FROM DNA where name=:name");
+    query.prepare("select pname3,well3,wait3,mix3,mag3,vol3,spd3,temp3,temp31 FROM DNA where name=:name");
     query.bindValue(":name",name);
     query.exec();
     QString processname3;
-    int pos3,wait3,mix3,mag3,vol3,spd3,temp3;
+    int pos3=0,wait3=0,mix3=0,mag3=0,vol3=0,spd3=0,temp3=0,temp31=0;
     while(query.next())
     {
         processname3=query.value(0).toString();
@@ -596,13 +662,14 @@ void MainWindow::on_toolButton_6_clicked()
         vol3=query.value(5).toInt();
         spd3=query.value(6).toInt();
         temp3=query.value(7).toInt();
+        temp31=query.value(8).toInt();
     }
     //step 4
-    query.prepare("select pname4,well4,wait4,mix4,mag4,vol4,spd4,temp4 FROM DNA where name=:name");
+    query.prepare("select pname4,well4,wait4,mix4,mag4,vol4,spd4,temp4,temp41 FROM DNA where name=:name");
     query.bindValue(":name",name);
     query.exec();
     QString processname4;
-    int pos4,wait4,mix4,mag4,vol4,spd4,temp4;
+    int pos4=0,wait4=0,mix4=0,mag4=0,vol4=0,spd4=0,temp4=0,temp41=0;
     while(query.next())
     {
         processname4=query.value(0).toString();
@@ -613,13 +680,14 @@ void MainWindow::on_toolButton_6_clicked()
         vol4=query.value(5).toInt();
         spd4=query.value(6).toInt();
         temp4=query.value(7).toInt();
+        temp41=query.value(8).toInt();
     }
     //step 5
-    query.prepare("select pname5,well5,wait5,mix5,mag5,vol5,spd5,temp5 FROM DNA where name=:name");
+    query.prepare("select pname5,well5,wait5,mix5,mag5,vol5,spd5,temp5,temp51 FROM DNA where name=:name");
     query.bindValue(":name",name);
     query.exec();
     QString processname5;
-    int pos5,wait5,mix5,mag5,vol5,spd5,temp5;
+    int pos5=0,wait5=0,mix5=0,mag5=0,vol5=0,spd5=0,temp5=0,temp51=0;
     while(query.next())
     {
         processname5=query.value(0).toString();
@@ -630,13 +698,14 @@ void MainWindow::on_toolButton_6_clicked()
         vol5=query.value(5).toInt();
         spd5=query.value(6).toInt();
         temp5=query.value(7).toInt();
+        temp51=query.value(8).toInt();
     }
     //step 6
-    query.prepare("select pname6,well6,wait6,mix6,mag6,vol6,spd6,temp6 FROM DNA where name=:name");
+    query.prepare("select pname6,well6,wait6,mix6,mag6,vol6,spd6,temp6,temp61 FROM DNA where name=:name");
     query.bindValue(":name",name);
     query.exec();
     QString processname6;
-    int pos6,wait6,mix6,mag6,vol6,spd6,temp6;
+    int pos6=0,wait6=0,mix6=0,mag6=0,vol6=0,spd6=0,temp6=0,temp61=0;
     while(query.next())
     {
         processname6=query.value(0).toString();
@@ -647,13 +716,14 @@ void MainWindow::on_toolButton_6_clicked()
         vol6=query.value(5).toInt();
         spd6=query.value(6).toInt();
         temp6=query.value(7).toInt();
+        temp61=query.value(8).toInt();
     }
     //step 7
-    query.prepare("select pname7,well7,wait7,mix7,mag7,vol7,spd7,temp7 FROM DNA where name=:name");
+    query.prepare("select pname7,well7,wait7,mix7,mag7,vol7,spd7,temp7,temp71 FROM DNA where name=:name");
     query.bindValue(":name",name);
     query.exec();
     QString processname7;
-    int pos7,wait7,mix7,mag7,vol7,spd7,temp7;
+    int pos7=0,wait7=0,mix7=0,mag7=0,vol7=0,spd7=0,temp7=0,temp71=0;
     while(query.next())
     {
         processname7=query.value(0).toString();
@@ -664,6 +734,7 @@ void MainWindow::on_toolButton_6_clicked()
         vol7=query.value(5).toInt();
         spd7=query.value(6).toInt();
         temp7=query.value(7).toInt();
+        temp71=query.value(8).toInt();
     }
 
     int cur_pos=1;
@@ -677,7 +748,16 @@ void MainWindow::on_toolButton_6_clicked()
 
     //step 1
     s = QString::number(temp1);
-    array[4]="W "+s+" 0 "+s+" 0 "+s+" 0 "+s+" 0";
+
+
+    if(temp11==1)
+        array[4]="W lys "+s;
+    else if(temp11==2)
+        array[4]="W elu "+s;
+    else
+        array[4]="W end";
+
+
     if(pos1>cur_pos)
     {
         mov_pos=pos1-cur_pos;
@@ -712,7 +792,17 @@ void MainWindow::on_toolButton_6_clicked()
     //step 2
     array[12]=processname2;
     s = QString::number(temp2);
-    array[13]="W "+s+" 0 "+s+" 0 "+s+" 0 "+s+" 0";
+
+
+    if(temp21==1)
+        array[13]="W lys "+s;
+    else if(temp21==2)
+        array[13]="W elu "+s;
+    else
+        array[13]="W end";
+
+
+
     if(pos2>cur_pos)
     {
         mov_pos=pos2-cur_pos;
@@ -749,7 +839,16 @@ void MainWindow::on_toolButton_6_clicked()
     //step 3
     array[22]=processname3;
     s = QString::number(temp3);
-    array[23]="W "+s+" 0 "+s+" 0 "+s+" 0 "+s+" 0";
+
+
+    if(temp31==1)
+        array[23]="W lys "+s;
+    else if(temp31==2)
+        array[23]="W elu "+s;
+    else
+        array[23]="W end";
+
+
     if(pos3>cur_pos)
     {
         mov_pos=pos3-cur_pos;
@@ -786,7 +885,16 @@ void MainWindow::on_toolButton_6_clicked()
     //step 4
     array[32]=processname4;
     s = QString::number(temp4);
-    array[33]="W 0 "+s+" 0 "+s+" 0 "+s+" 0 "+s;
+
+
+    if(temp41==1)
+        array[33]="W lys "+s;
+    else if(temp41==2)
+        array[33]="W elu "+s;
+    else
+        array[33]="W end";
+
+
     if(pos4>cur_pos)
     {
         mov_pos=pos4-cur_pos;
@@ -823,7 +931,17 @@ void MainWindow::on_toolButton_6_clicked()
     //step 5
     array[42]=processname5;
     s = QString::number(temp5);
-    array[43]="W 0 "+s+" 0 "+s+" 0 "+s+" 0 "+s;
+
+
+    if(temp51==1)
+        array[43]="W lys "+s;
+    else if(temp51==2)
+        array[43]="W elu "+s;
+    else
+        array[43]="W end";
+
+
+
     if(pos5>cur_pos)
     {
         mov_pos=pos5-cur_pos;
@@ -859,7 +977,16 @@ void MainWindow::on_toolButton_6_clicked()
     //step 6
     array[52]=processname6;
     s = QString::number(temp6);
-    array[53]="W 0 "+s+" 0 "+s+" 0 "+s+" 0 "+s;
+
+
+    if(temp61==1)
+        array[53]="W lys "+s;
+    else if(temp61==2)
+        array[53]="W elu "+s;
+    else
+        array[53]="W end";
+
+
     if(pos6>cur_pos)
     {
         mov_pos=pos6-cur_pos;
@@ -897,7 +1024,16 @@ void MainWindow::on_toolButton_6_clicked()
     //step 7
     array[62]=processname7;
     s = QString::number(temp7);
-    array[63]="W 0 "+s+" 0 "+s+" 0 "+s+" 0 "+s;
+
+
+    if(temp71==1)
+        array[63]="W lys "+s;
+    else if(temp71==2)
+        array[63]="W elu "+s;
+    else
+        array[63]="W end";
+
+
     if(pos7>cur_pos)
     {
         mov_pos=pos7-cur_pos;
@@ -930,20 +1066,22 @@ void MainWindow::on_toolButton_6_clicked()
     array[70]="mag "+s;
     array[71]="msb 1";
 
-    for(int i=0;i<72;i++)
+    for(int i=0;i<80;i++)
     {
         qDebug()<<array[i];
         if(array[i]=="")
         {
-            array_len=i;
+            array_len=i-1;
             break;
         }
     }
+    array_len=array_len+5;
     array[0]="P"+array[0];
-    for(int i=12;i<array_len;i+=10)
+    for(int i=12;i<array_len-6;i+=10)
     {
         array[i]="P"+array[i];
     }
+    array[array_len-4]="W end";
     array[array_len-3]="mhmm";
     array[array_len-2]="shm";
     array[array_len-1]="bhm";
@@ -953,6 +1091,8 @@ void MainWindow::on_toolButton_6_clicked()
         qDebug()<<array[i];
     }
     ui->label_91->setText(name);
+    total_time=wait1+mix1+mag1+wait2+mix2+mag2+wait3+mix3+mag3+wait4+mix4+mag4+wait5+mix5+mag5+wait6+mix6+mag6+wait7+mix7+mag7;
+    ui->lineEdit_149->setText(QDateTime::fromTime_t(total_time).toUTC().toString("hh:mm:ss"));
     timer1->start(1000);
     sub_time_loop=1;
 }
@@ -960,19 +1100,22 @@ void MainWindow::on_toolButton_6_clicked()
 void MainWindow::on_toolButton_clicked()
 {
     ui->stackedWidget->setCurrentIndex(0);
+    timer1->stop();
 }
 
 void MainWindow::on_toolButton_2_clicked()
 {
     ui->stackedWidget->setCurrentIndex(4);
     ui->lineEdit_144->clear();
-    ui->lineEdit_144->setStyleSheet("QLineEdit{background:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(0,0,0,0))}");
+    ui->lineEdit_144->setStyleSheet("QLineEdit{background-color:rgb(255, 255, 255);}");
+    timer1->stop();
 
 }
 
 void MainWindow::on_toolButton_26_clicked()
 {
     ui->stackedWidget->setCurrentIndex(0);
+    ui->listWidget->setCurrentRow(0);
 }
 
 void MainWindow::on_pushButton_3_clicked()
@@ -1215,6 +1358,11 @@ void MainWindow::on_pushButton_26_clicked()
     {
         ui->stackedWidget->setCurrentIndex(4);
         ui->lineEdit_144->setText(ui->lineEdit_145->text());
+    }
+    else if (opt==45)
+    {
+        ui->stackedWidget->setCurrentIndex(9);
+        ui->lineEdit_2->setText(ui->lineEdit_145->text());
     }
 }
 
@@ -2030,6 +2178,8 @@ void MainWindow::on_toolButton_5_clicked()
 
 void MainWindow::on_toolButton_4_clicked()
 {
+    ui->toolButton->hide();
+    ui->toolButton_2->hide();
     QString temp;
     temp=ui->listWidget->currentItem()->text();
     //qDebug()<<selitem;
@@ -2141,6 +2291,21 @@ void MainWindow::on_toolButton_4_clicked()
         ui->lineEdit_41->setText(query.value(5).toString());
         ui->lineEdit_47->setText(query.value(6).toString());
     }
+    query.prepare("select temp11,temp21,temp31,temp41,temp51,temp61,temp71 FROM DNA where name=:name");
+    query.bindValue(":name",temp);
+    query.exec();
+    while(query.next())
+    {
+        ui->comboBox_21->setCurrentIndex(query.value(0).toInt());
+        ui->comboBox_22->setCurrentIndex(query.value(1).toInt());
+        ui->comboBox_36->setCurrentIndex(query.value(2).toInt());
+        ui->comboBox_37->setCurrentIndex(query.value(3).toInt());
+        ui->comboBox_38->setCurrentIndex(query.value(4).toInt());
+        ui->comboBox_39->setCurrentIndex(query.value(5).toInt());
+        ui->comboBox_40->setCurrentIndex(query.value(6).toInt());
+    }
+
+
     ui->lineEdit->setText(temp);
     from_edit=1;
     ui->stackedWidget->setCurrentIndex(2);
@@ -2149,29 +2314,34 @@ void MainWindow::on_toolButton_4_clicked()
 
 void MainWindow::realtime_temperature()
 {
+    timer1->stop();
     Pi2c arduino(8); //Create a new object "arduino" using address "0x07"
     char receive[30]; //Create a buffer of char (single bytes) for the data
     //Receive from the Arduino and put the contents into the "receive" char array
-    //timer1->stop();
     QThread::msleep(100);
     arduino.i2cRead(receive,30);
     QThread::msleep(100);
-    //timer1->start(1000);
     qDebug()<<receive;
     QString str=receive;
-    //Print out what the Arduino is sending...
-    //qDebug() << "Arduino Says: " << str.mid(0,2);
-    ui->lineEdit_48->setText(str.mid(0,2));
-    ui->lineEdit_49->setText(str.mid(3,2));
-    ui->lineEdit_92->setText(str.mid(6,2));
-    ui->lineEdit_93->setText(str.mid(9,2));
-    ui->lineEdit_140->setText(str.mid(12,2));
-    ui->lineEdit_141->setText(str.mid(15,2));
-    ui->lineEdit_142->setText(str.mid(18,2));
-    ui->lineEdit_143->setText(str.mid(21,2));
+    QStringList list;
+    list=str.split(" ");
+    //qDebug()<<list.size();
+    if(list.size()<8)
+    {
 
-
-    //Send an 16 bit integer
+    }
+    else if(list[7].toInt()>0 && list[7].toInt()<110)
+    {
+        ui->lineEdit_48->setText(list[0]);
+        ui->lineEdit_49->setText(list[1]);
+        ui->lineEdit_92->setText(list[2]);
+        ui->lineEdit_93->setText(list[3]);
+        ui->lineEdit_140->setText(list[4]);
+        ui->lineEdit_141->setText(list[5]);
+        ui->lineEdit_142->setText(list[6]);
+        ui->lineEdit_143->setText(list[7]);
+    }
+    timer1->start(1000);
 }
 
 void MainWindow::processing()
@@ -2221,9 +2391,9 @@ void MainWindow::processing()
                 ui->lineEdit_146->setText(query.value(0).toString());
                 ui->lineEdit_147->setText(query.value(1).toString());
                 ui->lineEdit_148->setText(query.value(2).toString());
-                ui->lineEdit_146->setStyleSheet("QLineEdit{background:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(0,0,0,0))}");
-                ui->lineEdit_147->setStyleSheet("QLineEdit{background:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(0,0,0,0))}");
-                ui->lineEdit_148->setStyleSheet("QLineEdit{background:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(0,0,0,0))}");
+                ui->lineEdit_146->setStyleSheet("QLineEdit{background-color:rgb(0, 170, 255);}");
+                ui->lineEdit_147->setStyleSheet("QLineEdit{background-color:rgb(0, 170, 255);}");
+                ui->lineEdit_148->setStyleSheet("QLineEdit{background-color:rgb(0, 170, 255);}");
             }
             sub_time_loop=sub_time_loop+1;
             for(int i=0;i<array_len;i++)
@@ -2295,25 +2465,26 @@ void MainWindow::processing()
             if(array[0].left(3)=="idl" || array[0].left(3)== "mix" || array[0].left(3)== "mis" || array[0].left(3)== "mag")
             {
                 //timer_val=array[0].mid(4,4).toInt();
+                ui->label_35->hide();
+                proctimer1->stop();
                 QStringList elements = array[0].split(' ');
                 //qDebug()<<elements[0]<<" "<<elements[1];
                 timer_val=elements[1].toInt();
                 if(timer_val>=2)
                 {
-                    proctimer = new QTimer(this);
                     if(array[0].left(3)=="idl")
                         proc_countdown=1;
                     else if (array[0].left(3)== "mix" || array[0].left(3)== "mis")
                         proc_countdown=2;
                     else if(array[0].left(3)== "mag")
                         proc_countdown=3;
-                    connect(proctimer, SIGNAL(timeout()), this,SLOT(proc_timer()));
                     proctimer->start(1000);
                 }
             }
             else
             {
                 timer_val=1;
+                proctimer1->start(1000);
             }
 
             for(int i=0;i<array_len;i++)
@@ -2323,19 +2494,37 @@ void MainWindow::processing()
             array[array_len]='\0';
             array_len=array_len-1;
         }
-        //qDebug()<<array_len;
-        //qDebug()<<timer_val;
         if(array_len>=0)
         {
-            timer->start(timer_val*1000);
-            //qDebug()<<timer_val*10;
-
+            if(timer_val>0)
+                timer->start((timer_val*1000)-500);
+            else
+                timer->start(timer_val*1000);
         }
         else
         {
-            ui->stackedWidget->setCurrentIndex(0);
+            Pi2c arduino(8);
+            QString data="W end";
+            char* ch;
+            QByteArray ba=data.toLatin1();
+            ch=ba.data();
+            QThread::msleep(100);
+            arduino.i2cWrite(ch,30);
+            QThread::msleep(100);
+            array_len=0;
+            timer->stop();
+            timer1->stop();
+            timer2->stop();
+            timer3->stop();
+            proctimer->stop();
+            proctimer1->stop();
             ui->toolButton_18->setText("Start");
-
+            ui->stackedWidget->setCurrentIndex(0);
+            ui->listWidget->setCurrentRow(0);
+            ui->label_18->hide();
+            ui->label_35->hide();
+            ui->toolButton->setVisible(true);
+            ui->toolButton_2->setVisible(true);
         }
     }
     else
@@ -2354,26 +2543,17 @@ void MainWindow::testing()
     }
     else
     {
+        timer1->stop();
         Pi2c arduino(7);
         char receive[30];
-        //char cmp[5]="done";
-        //while(strncmp(receive,"done",4)!=0)
-        //{
-        //timer1->stop();
         QThread::msleep(100);
         arduino.i2cRead(receive,30);
         QThread::msleep(100);
-        //timer1->start(1000);
-
-        //QThread::msleep(500);
-        qDebug() << "Arduino Says from testing: " << receive;
-        //qDebug()<<strncmp(receive,"done",4);
-
+        qDebug() <<"FROM MOTOR BOARD : "<< receive;
         if(strncmp(receive,"done",4)==0)
         {
             timer->stop();
-            qDebug()<<"timer ended";
-            //call the same function back from here
+            timer1->start(1000);
             if(array_len>=0)
             {
                 processing();
@@ -2383,7 +2563,6 @@ void MainWindow::testing()
         {
             timer->start(500);
         }
-        QThread::msleep(500);
     }
 }
 
@@ -2403,7 +2582,7 @@ void MainWindow::init_motor()
         ui->label_94->setVisible(true);
         ui->label_95->hide();
         ui->toolButton_45->hide();
-
+        ui->label_93->setText("Initializing Motors...");
         QString data="ini";
         char* ch;
         QByteArray ba=data.toLatin1();
@@ -2413,14 +2592,7 @@ void MainWindow::init_motor()
         QThread::msleep(100);
         timer3->start(1000);
     }
-
-
 }
-
-
-//create a pause button
-//while resume check the sensor status
-//when door open this button goes to pause and need to resume through the button
 
 void MainWindow::on_toolButton_45_clicked()
 {
@@ -2434,12 +2606,39 @@ void MainWindow::init()
     QThread::msleep(100);
     arduino.i2cRead(receive,30);
     QThread::msleep(100);
+    qDebug()<<receive;
     if(strncmp(receive,"done",4)==0)
     {
-        timer3->stop();
-        ui->stackedWidget->setCurrentIndex(0);
-    }
+            timer3->stop();
+            ui->stackedWidget->setCurrentIndex(0);
+            ui->toolButton->setVisible(true);
+            ui->toolButton_2->setVisible(true);
 
+    }
+    else if(strncmp(receive,"merr",4)==0)
+    {
+        timer3->stop();
+        ui->label_4->setText("Motor Init Error");
+        ui->label_4->setStyleSheet("QLabel{color:red;}");
+        ui->stackedWidget->setCurrentIndex(0);
+        ui->toolButton_6->setDisabled(true);
+    }
+    else if(strncmp(receive,"serr",4)==0)
+    {
+        timer3->stop();
+        ui->label_4->setText("Motor Init Error");
+        ui->label_4->setStyleSheet("QLabel{color:red;}");
+        ui->stackedWidget->setCurrentIndex(0);
+        ui->toolButton_6->setDisabled(true);
+    }
+    else if(strncmp(receive,"berr",4)==0)
+    {
+        timer3->stop();
+        ui->label_4->setText("Motor Init Error");
+        ui->label_4->setStyleSheet("QLabel{color:red;}");
+        ui->stackedWidget->setCurrentIndex(0);
+        ui->toolButton_6->setDisabled(true);
+    }
 }
 
 void MainWindow::on_toolButton_46_clicked()
@@ -2449,10 +2648,13 @@ void MainWindow::on_toolButton_46_clicked()
 
 void MainWindow::on_toolButton_18_clicked()
 {
+    ui->label_18->setVisible(true);
     QString s=ui->toolButton_18->text();
     if(s=="Start")
     {
         ui->toolButton_18->setText("Stop");
+        ui->toolButton->hide();
+        ui->toolButton_2->hide();
         processing();
     }
     else if(s=="Stop")
@@ -2474,10 +2676,8 @@ void MainWindow::on_toolButton_18_clicked()
             QThread::msleep(100);
             arduino.i2cWrite(ch,30);
             QThread::msleep(100);
-
-
             Pi2c arduino1(8);
-            data="W 0 0 0 0 0 0 0 0";
+            data="W end";
             ba=data.toLatin1();
             ch=ba.data();
             QThread::msleep(100);
@@ -2489,17 +2689,18 @@ void MainWindow::on_toolButton_18_clicked()
             timer2->stop();
             timer3->stop();
             proctimer->stop();
+            proctimer1->stop();
             ui->toolButton_18->setText("Start");
             ui->stackedWidget->setCurrentIndex(0);
+            ui->listWidget->setCurrentRow(0);
+            ui->label_35->hide();
+            ui->label_18->hide();
+            ui->toolButton->setVisible(true);
+            ui->toolButton_2->setVisible(true);
         }
-        else
-        {
-
-        }
-
     }
-
 }
+
 
 void MainWindow::on_toolButton_43_clicked()
 {
@@ -2509,6 +2710,7 @@ void MainWindow::on_toolButton_43_clicked()
     {
         ui->toolButton_43->setText("Turn OFF UV LAMP");
         ui->toolButton->setDisabled(true);
+        ui->toolButton_2->setDisabled(true);
         Pi2c arduino(7);
         QString data="UVN "+uvdur;
         char* ch;
@@ -2536,6 +2738,7 @@ void MainWindow::on_toolButton_43_clicked()
         ui->toolButton_43->setText("Turn ON UV LAMP");
         ui->stackedWidget->setCurrentIndex(0);
         ui->toolButton->setDisabled(false);
+        ui->toolButton_2->setDisabled(false);
 
     }
 
@@ -2549,17 +2752,19 @@ void MainWindow::uv_timer()
     ui->lineEdit_144->setText(QString::number(uvdur));
     if(uvdur%2==0)
     {
-        ui->lineEdit_144->setStyleSheet("QLineEdit{background:qlineargradient(spread:repeat, x1:0.510204, y1:1, x2:0.505, y2:0, stop:0 rgba(224,132,2,255), stop:1 rgba(222,177,129,255))}");
+        ui->lineEdit_144->setStyleSheet("QLineEdit{background-color:rgb(255, 255, 255);}");
     }
     else
     {
-        ui->lineEdit_144->setStyleSheet("QLineEdit{background:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(0,0,0,0))}");
+        ui->lineEdit_144->setStyleSheet("QLineEdit{background-color:rgb(0, 170, 255);}");
+
     }
     if(uvdur<0)
     {
         uvtimer->stop();
         ui->toolButton_43->setText("Turn ON UV LAMP");
         ui->toolButton->setDisabled(false);
+        ui->toolButton_2->setDisabled(false);
         ui->stackedWidget->setCurrentIndex(0);
     }
 
@@ -2567,6 +2772,26 @@ void MainWindow::uv_timer()
 
 void MainWindow::proc_timer()
 {
+    total_time=total_time-1;
+    ui->lineEdit_149->setText(QDateTime::fromTime_t(total_time).toUTC().toString("hh:mm:ss"));
+    if(total_time%2==0)
+    {
+        ui->lineEdit_149->setStyleSheet("QLineEdit {background-color:rgb(0, 77, 116);font-weight: bold;color:rgb(255, 255, 255);border-radius:5%;border: 4px solid rgb(0, 77, 166);}");
+    }
+    else
+    {
+        ui->lineEdit_149->setStyleSheet("QLineEdit {background-color:rgb(255,255,255);font-weight: bold;color:rgb(0, 77, 116);border-radius:5%;border: 4px solid rgb(0, 77, 166);}");
+    }
+    int dur=ui->lineEdit_146->text().toInt();
+    int dur1=ui->lineEdit_147->text().toInt();
+    int dur2=ui->lineEdit_148->text().toInt();
+    if(dur==0)
+        ui->lineEdit_146->setStyleSheet("QLineEdit{background-color:rgb(255, 255, 255);}");
+    if(dur1==0)
+        ui->lineEdit_147->setStyleSheet("QLineEdit{background-color:rgb(255, 255, 255);}");
+    if(dur2==0)
+        ui->lineEdit_148->setStyleSheet("QLineEdit{background-color:rgb(255, 255, 255);}");
+
     if(proc_countdown==1)
     {
         int dur=ui->lineEdit_146->text().toInt();
@@ -2574,11 +2799,12 @@ void MainWindow::proc_timer()
         ui->lineEdit_146->setText(QString::number(dur));
         if(dur%2==0)
         {
-            ui->lineEdit_146->setStyleSheet("QLineEdit{background:qlineargradient(spread:repeat, x1:0.510204, y1:1, x2:0.505, y2:0, stop:0 rgba(224,132,2,255), stop:1 rgba(222,177,129,255))}");
+            ui->lineEdit_146->setStyleSheet("QLineEdit{background-color:rgb(255, 255, 255);}");
         }
         else
         {
-            ui->lineEdit_146->setStyleSheet("QLineEdit{background:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(0,0,0,0))}");
+            ui->lineEdit_146->setStyleSheet("QLineEdit{background-color:rgb(0, 170, 255);}");
+
         }
         if(dur<=0)
         {
@@ -2593,11 +2819,12 @@ void MainWindow::proc_timer()
         ui->lineEdit_147->setText(QString::number(dur));
         if(dur%2==0)
         {
-            ui->lineEdit_147->setStyleSheet("QLineEdit{background:qlineargradient(spread:repeat, x1:0.510204, y1:1, x2:0.505, y2:0, stop:0 rgba(224,132,2,255), stop:1 rgba(222,177,129,255))}");
+            ui->lineEdit_147->setStyleSheet("QLineEdit{background-color:rgb(255, 255, 255);}");
         }
         else
         {
-            ui->lineEdit_147->setStyleSheet("QLineEdit{background:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(0,0,0,0))}");
+            ui->lineEdit_147->setStyleSheet("QLineEdit{background-color:rgb(0, 170, 255);}");
+
         }
         if(dur<=0)
         {
@@ -2612,11 +2839,12 @@ void MainWindow::proc_timer()
         ui->lineEdit_148->setText(QString::number(dur));
         if(dur%2==0)
         {
-            ui->lineEdit_148->setStyleSheet("QLineEdit{background:qlineargradient(spread:repeat, x1:0.510204, y1:1, x2:0.505, y2:0, stop:0 rgba(224,132,2,255), stop:1 rgba(222,177,129,255))}");
+            ui->lineEdit_148->setStyleSheet("QLineEdit{background-color:rgb(255, 255, 255);}");
         }
         else
         {
-            ui->lineEdit_148->setStyleSheet("QLineEdit{background:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(0,0,0,0))}");
+            ui->lineEdit_148->setStyleSheet("QLineEdit{background-color:rgb(0, 170, 255);}");
+
         }
         if(dur<=0)
         {
@@ -2625,6 +2853,19 @@ void MainWindow::proc_timer()
         }
     }
 }
+
+void MainWindow::proc_timer1()
+{
+    proc1_countdown+=1;
+    ui->label_35->setVisible(true);
+    if(proc1_countdown>1)
+    {
+        proc1_countdown=0;
+        ui->label_35->hide();
+    }
+
+}
+
 
 void MainWindow::on_toolButton_7_clicked()
 {
@@ -2722,4 +2963,143 @@ void MainWindow::on_pushButton_177_clicked()
 {
     ui->lineEdit_145->setText(ui->lineEdit_145->text()+ui->pushButton_177->text());
 
+}
+
+void MainWindow::on_toolButton_47_clicked()
+{
+    ui->stackedWidget->setCurrentIndex(9);
+        ui->label_36->setVisible(true);
+        qApp->processEvents();
+        QStringList list2;
+        QProcess process1;
+        process1.start("sh",QStringList()<<"-c"<<"sudo iwlist wlan0 scan | grep ESSID");//scan list of wifi networks
+        process1.waitForFinished();
+        //ui->page_12->setVisible(true);
+        ui->label_36->hide();
+        QString data = process1.readAllStandardOutput();
+        QString Error= process1.readAllStandardError();
+        ui->comboBox_2->clear();
+        list2 = (QStringList()<<"------Select-------");//append to dropdownlist
+        ui->comboBox_2->addItems(list2);
+        QStringList list = data.split("\n");//split data
+        for(int i=0;i<list.count()-1;i++)
+        {
+            QStringList list1 = list.at(i).split("ESSID:");
+            QString data1 = list1.at(1);
+            list2 = (QStringList()<<data1);
+            ui->comboBox_2->addItems(list2);//adding wifi names to dropdownlist
+        }
+        process1.start("sh",QStringList()<<"-c"<<"hostname -I");//scan list of wifi networks
+        process1.waitForFinished();
+        data = process1.readAllStandardOutput();
+        ui->lineEdit_5->setText(data);
+}
+
+void MainWindow::on_toolButton_8_clicked()
+{
+    ui->stackedWidget->setCurrentIndex(8);
+}
+
+void MainWindow::on_pushButton_10_clicked()
+{
+    opt=45;
+    ui->stackedWidget->setCurrentIndex(5);
+    ui->stackedWidget_2->setCurrentIndex(0);
+    ui->lineEdit_145->setText(ui->lineEdit_2->text());
+}
+
+void MainWindow::on_pushButton_35_clicked()
+{
+    QFile file("/etc/wpa_supplicant/wpa_supplicant.conf");
+       if(file.open(QIODevice::WriteOnly | QIODevice::Text))
+       {
+           QTextStream stream(&file);
+           stream<<"ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev\n";
+           stream<<"update_config=1\n";
+           stream<<"country=IN\n";
+           stream<<"\n";
+           stream<<"network={\n";
+           stream<<"\tssid=";
+           stream<<ui->comboBox->currentText()+"\n";
+           stream<<"\tpsk=\"";
+           stream<<ui->lineEdit_5->text()+"\"\n";
+           stream<<"\tkey_mgmt=WPA-PSK\n";
+           stream<<"}";
+           file.close();
+           QProcess process2;
+           process2.start("sh",QStringList()<<"-c"<<"sudo wpa_cli -i wlan0 reconfigure");
+           process2.waitForFinished();
+       }
+}
+
+void MainWindow::on_pushButton_36_clicked()
+{
+    QProcess process1;
+        process1.start("sh",QStringList()<<"-c"<<"hostname -I");//scan list of wifi networks
+        process1.waitForFinished();
+        QString data = process1.readAllStandardOutput();
+        ui->lineEdit_5->setText(data);
+}
+
+void MainWindow::on_toolButton_48_clicked()
+{
+    ui->stackedWidget->setCurrentIndex(10);
+
+}
+
+void MainWindow::on_toolButton_49_clicked()
+{
+    ui->stackedWidget->setCurrentIndex(11);
+}
+
+void MainWindow::on_pushButton_37_clicked()
+{
+    ui->page_15->setDisabled(true);
+    Pi2c arduino(7);
+    QString data="ini";
+    char* ch;
+    QByteArray ba=data.toLatin1();
+    ch=ba.data();
+    QThread::msleep(100);
+    arduino.i2cWrite(ch,30);
+    QThread::msleep(100);
+    mtesttimer->start(1000);
+}
+
+
+
+
+void MainWindow::motor_test()
+{
+    Pi2c arduino(7);
+    char receive[30];
+    QThread::msleep(100);
+    arduino.i2cRead(receive,30);
+    QThread::msleep(100);
+    qDebug()<<receive;
+    if(strncmp(receive,"done",4)==0)
+    {
+            mtesttimer->stop();
+            ui->lineEdit_112->setText("Pass");
+            ui->page_15->setDisabled(false);
+
+    }
+    else if(strncmp(receive,"merr",4)==0)
+    {
+        mtesttimer->stop();
+        ui->lineEdit_112->setText("Magnet Motor Error");
+        ui->page_15->setDisabled(false);
+    }
+    else if(strncmp(receive,"serr",4)==0)
+    {
+        mtesttimer->stop();
+        ui->lineEdit_112->setText("Sleeve Motor Error");
+        ui->page_15->setDisabled(false);
+    }
+    else if(strncmp(receive,"berr",4)==0)
+    {
+        mtesttimer->stop();
+        ui->lineEdit_112->setText("Base Motor Error");
+        ui->page_15->setDisabled(false);
+    }
 }
