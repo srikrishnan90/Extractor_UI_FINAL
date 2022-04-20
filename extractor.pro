@@ -47,3 +47,5 @@ LIBS += -L/usr/local/lib -lwiringPi -liir
 RESOURCES += \
     extqrc.qrc
 
+DISTFILES +=
+

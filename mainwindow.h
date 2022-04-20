@@ -329,6 +329,7 @@ private slots:
     void proc_timer();
     void proc_timer1();
     void motor_test();
+    void motor_test1();
 
     void on_toolButton_45_clicked();
 
@@ -388,11 +389,22 @@ private slots:
 
     void on_pushButton_37_clicked();
 
+    void on_pushButton_326_clicked();
 
+    void on_pushButton_325_clicked();
+
+    void on_pushButton_324_clicked();
+
+    void on_pushButton_323_clicked();
+
+
+    void on_pushButton_322_clicked();
+
+    void on_pushButton_329_clicked();
 
 private:
     Ui::MainWindow *ui;
-    QTimer *timer, *timer1, *timer2, *timer3, *uvtimer, *proctimer, *proctimer1, *mtesttimer;
+    QTimer *timer, *timer1, *timer2, *timer3, *uvtimer, *proctimer, *proctimer1, *mtesttimer, *mtesttimer1;
 };
 
 #endif // MAINWINDOW_H

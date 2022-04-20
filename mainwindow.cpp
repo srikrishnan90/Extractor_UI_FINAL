@@ -12,6 +12,9 @@ static int into_pname=0;
 static int proc_countdown=0;
 static int proc1_countdown=0;
 static int total_time=0;
+static int hold_base=0;
+static int hold_magnet=0;
+static int hold_sleeve=0;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -21,7 +24,7 @@ MainWindow::MainWindow(QWidget *parent) :
     setWindowFlags(Qt::FramelessWindowHint);
 
     QSqlDatabase sqdb = QSqlDatabase::addDatabase("QSQLITE");
-    sqdb.setDatabaseName("/home/pi/git/ext.db");
+    sqdb.setDatabaseName("/home/pi/git/extractor/ext.db");
     if(!sqdb.open())
     {
         //qDebug() << "Can't Connect to DB !";
@@ -37,6 +40,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->label_94->hide();
     ui->toolButton->hide();
     ui->toolButton_2->hide();
+    ui->toolButton_8->hide();
+    ui->label_91->setVisible(true);
+    ui->label_91->setText("ALTA NUCLEIC ACID EXTACTOR");
     QSqlQuery query;
     //query.prepare("SELECT name FROM sqlite_master WHERE type='table'");
     query.prepare("SELECT name FROM DNA");
@@ -55,7 +61,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->listWidget->setCurrentRow(0);
     //ui->listWidget->setVerticalScrollBar(ui->verticalScrollBar);
     //ui->listWidget->setStyleSheet("QScrollBar:vertical { width: 60px; }");
-    ui->listWidget->verticalScrollBar()->setStyleSheet("QScrollBar:vertical { width: 60px; border:5px solid black;}");
+    ui->listWidget->verticalScrollBar()->setStyleSheet("QScrollBar:vertical { width: 50px; border:5px solid black;}");
     //QScrollBar::handle{background : pink;}");
     int fd = wiringPiI2CSetup(DEVICE_ID);
     qDebug()<<fd<<DEVICE_ID;
@@ -72,6 +78,7 @@ MainWindow::MainWindow(QWidget *parent) :
     proctimer = new QTimer(this);
     proctimer1 = new QTimer(this);
     mtesttimer = new QTimer(this);
+    mtesttimer1 = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this,SLOT(testing()));
     connect(timer1, SIGNAL(timeout()), this,SLOT(realtime_temperature()));
     connect(timer2, SIGNAL(timeout()), this,SLOT(init_motor()));
@@ -79,8 +86,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(proctimer, SIGNAL(timeout()), this,SLOT(proc_timer()));
     connect(proctimer1, SIGNAL(timeout()), this,SLOT(proc_timer1()));
     connect(mtesttimer, SIGNAL(timeout()), this,SLOT(motor_test()));
+    connect(mtesttimer1, SIGNAL(timeout()), this,SLOT(motor_test1()));
 
-    timer2->start(1000);
+
+    timer2->start(500);
     QMovie *movie = new QMovie("/home/pi/git/extractor/icons/animation.gif");
     ui->label_18->setMovie(movie);
     movie->start();
@@ -141,6 +150,9 @@ void MainWindow::on_toolButton_25_clicked()
 {
     ui->toolButton->hide();
     ui->toolButton_2->hide();
+    ui->toolButton_8->hide();
+    ui->label_91->setVisible(true);
+    ui->label_91->setText(ui->lineEdit->text());
     QMessageBox msg;
     QString temp, name;
 
@@ -365,6 +377,8 @@ void MainWindow::on_toolButton_16_clicked()
 {
     ui->toolButton->setVisible(true);
     ui->toolButton_2->setVisible(true);
+    ui->toolButton_8->setVisible(true);
+    ui->label_91->hide();
     ui->stackedWidget->setCurrentIndex(0);
     ui->listWidget->setCurrentRow(0);
     QString name,p1name,p2name,p3name,p4name,p5name,p6name,p7name;
@@ -590,6 +604,8 @@ void MainWindow::on_toolButton_15_clicked()
     ui->listWidget->setCurrentRow(0);
     ui->toolButton->setVisible(true);
     ui->toolButton_2->setVisible(true);
+    ui->toolButton_8->setVisible(true);
+    ui->label_91->hide();
 }
 
 void MainWindow::on_toolButton_6_clicked()
@@ -603,6 +619,9 @@ void MainWindow::on_toolButton_6_clicked()
     ui->lineEdit_147->setStyleSheet("QLineEdit{background-color:rgb(255, 255, 255);}");
     ui->lineEdit_148->setStyleSheet("QLineEdit{background-color:rgb(255, 255, 255);}");
     ui->label_18->hide();
+    ui->toolButton_2->hide();
+    ui->toolButton_8->hide();
+    ui->label_91->setVisible(true);
     //const QString& s = ui->listWidget->currentItem()->text();
     //ui->label_91->setText(s);
     QString name;
@@ -739,6 +758,7 @@ void MainWindow::on_toolButton_6_clicked()
 
     int cur_pos=1;
     int mov_pos=0;
+    QString d="";
     QString s="";
 
     array[0]=processname1;
@@ -780,10 +800,11 @@ void MainWindow::on_toolButton_6_clicked()
     s = QString::number(wait1);
     array[7]="idl "+s;
     s = QString::number(mix1);
+    d = QString::number(spd1);
     if(vol1>=150)
-        array[8]="mix "+s+" 1";
+        array[8]="mix "+s+" "+d;
     else
-        array[8]="mis "+s+" 1";
+        array[8]="mis "+s+" "+d;
     array[9]="mmf 1";
     s = QString::number(mag1);
     array[10]="mag "+s;
@@ -826,10 +847,11 @@ void MainWindow::on_toolButton_6_clicked()
     s = QString::number(wait2);
     array[17]="idl "+s;
     s = QString::number(mix2);
+    d = QString::number(spd2);
     if(vol2>=150)
-        array[18]="mix "+s+" 1";
+        array[18]="mix "+s+" "+d;
     else
-        array[18]="mis "+s+" 1";
+        array[18]="mis "+s+" "+d;
     array[19]="mmf 1";
     s = QString::number(mag2);
     array[20]="mag "+s;
@@ -872,10 +894,11 @@ void MainWindow::on_toolButton_6_clicked()
     s = QString::number(wait3);
     array[27]="idl "+s;
     s = QString::number(mix3);
+    d = QString::number(spd3);
     if(vol3>=150)
-        array[28]="mix "+s+" 1";
+        array[28]="mix "+s+" "+d;
     else
-        array[28]="mis "+s+" 1";
+        array[28]="mis "+s+" "+d;
     array[29]="mmf 1";
     s = QString::number(mag3);
     array[30]="mag "+s;
@@ -918,10 +941,11 @@ void MainWindow::on_toolButton_6_clicked()
     s = QString::number(wait4);
     array[37]="idl "+s;
     s = QString::number(mix4);
+    d = QString::number(spd4);
     if(vol4>=150)
-        array[38]="mix "+s+" 1";
+        array[38]="mix "+s+" "+d;
     else
-        array[38]="mis "+s+" 1";
+        array[38]="mis "+s+" "+d;
     array[39]="mmf 1";
     s = QString::number(mag4);
     array[40]="mag "+s;
@@ -965,10 +989,11 @@ void MainWindow::on_toolButton_6_clicked()
     s = QString::number(wait5);
     array[47]="idl "+s;
     s = QString::number(mix5);
+    d = QString::number(spd5);
     if(vol5>=150)
-        array[48]="mix "+s+" 1";
+        array[48]="mix "+s+" "+d;
     else
-        array[48]="mis "+s+" 1";    array[49]="mmf 1";
+        array[48]="mis "+s+" "+d;    array[49]="mmf 1";
     s = QString::number(mag5);
     array[50]="mag "+s;
     array[51]="msb 1";
@@ -1010,10 +1035,11 @@ void MainWindow::on_toolButton_6_clicked()
     s = QString::number(wait6);
     array[57]="idl "+s;
     s = QString::number(mix6);
+    d = QString::number(spd6);
     if(vol6>=150)
-        array[58]="mix "+s+" 1";
+        array[58]="mix "+s+" "+d;
     else
-        array[58]="mis "+s+" 1";
+        array[58]="mis "+s+" "+d;
     array[59]="mmf 1";
     s = QString::number(mag6);
     array[60]="mag "+s;
@@ -1057,10 +1083,11 @@ void MainWindow::on_toolButton_6_clicked()
     s = QString::number(wait7);
     array[67]="idl "+s;
     s = QString::number(mix7);
+    d = QString::number(spd7);
     if(vol7>=150)
-        array[68]="mix "+s+" 1";
+        array[68]="mix "+s+" "+d;
     else
-        array[68]="mis "+s+" 1";
+        array[68]="mis "+s+" "+d;
     array[69]="mmf 1";
     s = QString::number(mag7);
     array[70]="mag "+s;
@@ -1071,16 +1098,16 @@ void MainWindow::on_toolButton_6_clicked()
         qDebug()<<array[i];
         if(array[i]=="")
         {
-            array_len=i-1;
+            array_len=i;
             break;
         }
     }
-    array_len=array_len+5;
     array[0]="P"+array[0];
-    for(int i=12;i<array_len-6;i+=10)
+    for(int i=12;i<array_len;i+=10)
     {
         array[i]="P"+array[i];
     }
+    array_len=array_len+1;
     array[array_len-4]="W end";
     array[array_len-3]="mhmm";
     array[array_len-2]="shm";
@@ -1100,6 +1127,10 @@ void MainWindow::on_toolButton_6_clicked()
 void MainWindow::on_toolButton_clicked()
 {
     ui->stackedWidget->setCurrentIndex(0);
+    ui->label_91->hide();
+    ui->toolButton_2->setVisible(true);
+    ui->toolButton_8->setVisible(true);
+
     timer1->stop();
 }
 
@@ -1108,8 +1139,8 @@ void MainWindow::on_toolButton_2_clicked()
     ui->stackedWidget->setCurrentIndex(4);
     ui->lineEdit_144->clear();
     ui->lineEdit_144->setStyleSheet("QLineEdit{background-color:rgb(255, 255, 255);}");
+    ui->label_91->hide();
     timer1->stop();
-
 }
 
 void MainWindow::on_toolButton_26_clicked()
@@ -1363,6 +1394,11 @@ void MainWindow::on_pushButton_26_clicked()
     {
         ui->stackedWidget->setCurrentIndex(9);
         ui->lineEdit_2->setText(ui->lineEdit_145->text());
+    }
+    else if (opt==46)
+    {
+        ui->stackedWidget->setCurrentIndex(11);
+        ui->lineEdit_111->setText(ui->lineEdit_145->text());
     }
 }
 
@@ -2168,6 +2204,7 @@ void MainWindow::on_toolButton_5_clicked()
         {
             ui->listWidget->addItem(query.value(0).toString());
         }
+        ui->listWidget->setCurrentRow(0);
     }
     else
     {
@@ -2180,8 +2217,11 @@ void MainWindow::on_toolButton_4_clicked()
 {
     ui->toolButton->hide();
     ui->toolButton_2->hide();
+    ui->toolButton_8->hide();
     QString temp;
     temp=ui->listWidget->currentItem()->text();
+    ui->label_91->setVisible(true);
+    ui->label_91->setText(temp);
     //qDebug()<<selitem;
     QSqlQuery query;
     query.prepare("select pname1,pname2,pname3,pname4,pname5,pname6,pname7 FROM DNA where name=:name");
@@ -2314,7 +2354,6 @@ void MainWindow::on_toolButton_4_clicked()
 
 void MainWindow::realtime_temperature()
 {
-    timer1->stop();
     Pi2c arduino(8); //Create a new object "arduino" using address "0x07"
     char receive[30]; //Create a buffer of char (single bytes) for the data
     //Receive from the Arduino and put the contents into the "receive" char array
@@ -2340,8 +2379,16 @@ void MainWindow::realtime_temperature()
         ui->lineEdit_141->setText(list[5]);
         ui->lineEdit_142->setText(list[6]);
         ui->lineEdit_143->setText(list[7]);
+
+        ui->lineEdit_107->setText(list[0]);
+        ui->lineEdit_108->setText(list[1]);
+        ui->lineEdit_109->setText(list[2]);
+        ui->lineEdit_110->setText(list[3]);
+        ui->lineEdit_160->setText(list[4]);
+        ui->lineEdit_161->setText(list[5]);
+        ui->lineEdit_162->setText(list[6]);
+        ui->lineEdit_163->setText(list[7]);
     }
-    timer1->start(1000);
 }
 
 void MainWindow::processing()
@@ -2497,9 +2544,9 @@ void MainWindow::processing()
         if(array_len>=0)
         {
             if(timer_val>0)
-                timer->start((timer_val*1000)-500);
+                timer->start((timer_val*1000)-1000);
             else
-                timer->start(timer_val*1000);
+                timer->start(500);
         }
         else
         {
@@ -2523,8 +2570,11 @@ void MainWindow::processing()
             ui->listWidget->setCurrentRow(0);
             ui->label_18->hide();
             ui->label_35->hide();
+            ui->label_91->hide();
             ui->toolButton->setVisible(true);
             ui->toolButton_2->setVisible(true);
+            ui->toolButton_8->setVisible(true);
+
         }
     }
     else
@@ -2578,6 +2628,27 @@ void MainWindow::init_motor()
     qDebug()<<receive;
     if(strncmp(receive,"done",4)==0)
     {
+
+        //        QSqlQuery query;
+        //        query.prepare("SELECT bmh, mmh, smh FROM config where sno=1");
+        //        query.exec();
+        //        QString bmh,mmh,smh;
+        //        while(query.next())
+        //        {
+        //            bmh=query.value(0).toString();
+        //            mmh=query.value(1).toString();
+        //            smh=query.value(2).toString();
+        //        }
+
+        //        QString data="cmd "+bmh+" "+mmh+" "+smh;
+        //        char* ch;
+        //        qDebug()<<data;
+        //        QByteArray ba=data.toLatin1();
+        //        ch=ba.data();
+        //        QThread::msleep(100);
+        //        arduino.i2cWrite(ch,30);
+        //        QThread::msleep(100);
+
         ui->label_93->setVisible(true);
         ui->label_94->setVisible(true);
         ui->label_95->hide();
@@ -2590,7 +2661,7 @@ void MainWindow::init_motor()
         QThread::msleep(100);
         arduino.i2cWrite(ch,30);
         QThread::msleep(100);
-        timer3->start(1000);
+        timer3->start(500);
     }
 }
 
@@ -2609,10 +2680,12 @@ void MainWindow::init()
     qDebug()<<receive;
     if(strncmp(receive,"done",4)==0)
     {
-            timer3->stop();
-            ui->stackedWidget->setCurrentIndex(0);
-            ui->toolButton->setVisible(true);
-            ui->toolButton_2->setVisible(true);
+        timer3->stop();
+        ui->stackedWidget->setCurrentIndex(0);
+        ui->toolButton->setVisible(true);
+        ui->toolButton_2->setVisible(true);
+        ui->toolButton_8->setVisible(true);
+        ui->label_91->hide();
 
     }
     else if(strncmp(receive,"merr",4)==0)
@@ -2622,6 +2695,9 @@ void MainWindow::init()
         ui->label_4->setStyleSheet("QLabel{color:red;}");
         ui->stackedWidget->setCurrentIndex(0);
         ui->toolButton_6->setDisabled(true);
+        ui->toolButton->setVisible(true);
+        ui->toolButton_2->setVisible(true);
+        ui->toolButton_8->setVisible(true);
     }
     else if(strncmp(receive,"serr",4)==0)
     {
@@ -2630,6 +2706,9 @@ void MainWindow::init()
         ui->label_4->setStyleSheet("QLabel{color:red;}");
         ui->stackedWidget->setCurrentIndex(0);
         ui->toolButton_6->setDisabled(true);
+        ui->toolButton->setVisible(true);
+        ui->toolButton_2->setVisible(true);
+        ui->toolButton_8->setVisible(true);
     }
     else if(strncmp(receive,"berr",4)==0)
     {
@@ -2638,6 +2717,9 @@ void MainWindow::init()
         ui->label_4->setStyleSheet("QLabel{color:red;}");
         ui->stackedWidget->setCurrentIndex(0);
         ui->toolButton_6->setDisabled(true);
+        ui->toolButton->setVisible(true);
+        ui->toolButton_2->setVisible(true);
+        ui->toolButton_8->setVisible(true);
     }
 }
 
@@ -2653,8 +2735,10 @@ void MainWindow::on_toolButton_18_clicked()
     if(s=="Start")
     {
         ui->toolButton_18->setText("Stop");
+        ui->toolButton_18->setStyleSheet("QToolButton{background-color:#ff0000;}");
         ui->toolButton->hide();
         ui->toolButton_2->hide();
+        ui->toolButton_8->hide();
         processing();
     }
     else if(s=="Stop")
@@ -2691,12 +2775,15 @@ void MainWindow::on_toolButton_18_clicked()
             proctimer->stop();
             proctimer1->stop();
             ui->toolButton_18->setText("Start");
+            ui->toolButton_18->setStyleSheet("QToolButton{background-color:rgb(1, 114, 192);}");
             ui->stackedWidget->setCurrentIndex(0);
             ui->listWidget->setCurrentRow(0);
             ui->label_35->hide();
             ui->label_18->hide();
+            ui->label_91->hide();
             ui->toolButton->setVisible(true);
             ui->toolButton_2->setVisible(true);
+            ui->toolButton_8->setVisible(true);
         }
     }
 }
@@ -2711,6 +2798,7 @@ void MainWindow::on_toolButton_43_clicked()
         ui->toolButton_43->setText("Turn OFF UV LAMP");
         ui->toolButton->setDisabled(true);
         ui->toolButton_2->setDisabled(true);
+        ui->toolButton_8->setDisabled(true);
         Pi2c arduino(7);
         QString data="UVN "+uvdur;
         char* ch;
@@ -2739,7 +2827,7 @@ void MainWindow::on_toolButton_43_clicked()
         ui->stackedWidget->setCurrentIndex(0);
         ui->toolButton->setDisabled(false);
         ui->toolButton_2->setDisabled(false);
-
+        ui->toolButton_8->setDisabled(false);
     }
 
 
@@ -2765,6 +2853,7 @@ void MainWindow::uv_timer()
         ui->toolButton_43->setText("Turn ON UV LAMP");
         ui->toolButton->setDisabled(false);
         ui->toolButton_2->setDisabled(false);
+        ui->toolButton_8->setDisabled(false);
         ui->stackedWidget->setCurrentIndex(0);
     }
 
@@ -2968,36 +3057,40 @@ void MainWindow::on_pushButton_177_clicked()
 void MainWindow::on_toolButton_47_clicked()
 {
     ui->stackedWidget->setCurrentIndex(9);
-        ui->label_36->setVisible(true);
-        qApp->processEvents();
-        QStringList list2;
-        QProcess process1;
-        process1.start("sh",QStringList()<<"-c"<<"sudo iwlist wlan0 scan | grep ESSID");//scan list of wifi networks
-        process1.waitForFinished();
-        //ui->page_12->setVisible(true);
-        ui->label_36->hide();
-        QString data = process1.readAllStandardOutput();
-        QString Error= process1.readAllStandardError();
-        ui->comboBox_2->clear();
-        list2 = (QStringList()<<"------Select-------");//append to dropdownlist
-        ui->comboBox_2->addItems(list2);
-        QStringList list = data.split("\n");//split data
-        for(int i=0;i<list.count()-1;i++)
-        {
-            QStringList list1 = list.at(i).split("ESSID:");
-            QString data1 = list1.at(1);
-            list2 = (QStringList()<<data1);
-            ui->comboBox_2->addItems(list2);//adding wifi names to dropdownlist
-        }
-        process1.start("sh",QStringList()<<"-c"<<"hostname -I");//scan list of wifi networks
-        process1.waitForFinished();
-        data = process1.readAllStandardOutput();
-        ui->lineEdit_5->setText(data);
+    ui->label_36->setVisible(true);
+    ui->page_14->setDisabled(true);
+    qApp->processEvents();
+    QStringList list2;
+    QProcess process1;
+    process1.start("sh",QStringList()<<"-c"<<"sudo iwlist wlan0 scan | grep ESSID");//scan list of wifi networks
+    process1.waitForFinished();
+    //ui->page_12->setVisible(true);
+    ui->label_36->hide();
+    ui->page_14->setDisabled(false);
+    QString data = process1.readAllStandardOutput();
+    QString Error= process1.readAllStandardError();
+    ui->comboBox_2->clear();
+    list2 = (QStringList()<<"------Select-------");//append to dropdownlist
+    ui->comboBox_2->addItems(list2);
+    QStringList list = data.split("\n");//split data
+    for(int i=0;i<list.count()-1;i++)
+    {
+        QStringList list1 = list.at(i).split("ESSID:");
+        QString data1 = list1.at(1);
+        list2 = (QStringList()<<data1);
+        ui->comboBox_2->addItems(list2);//adding wifi names to dropdownlist
+    }
+    process1.start("sh",QStringList()<<"-c"<<"hostname -I");//scan list of wifi networks
+    process1.waitForFinished();
+    data = process1.readAllStandardOutput();
+    ui->lineEdit_5->setText(data);
 }
 
 void MainWindow::on_toolButton_8_clicked()
 {
     ui->stackedWidget->setCurrentIndex(8);
+    ui->label_91->hide();
+    timer1->stop();
 }
 
 void MainWindow::on_pushButton_10_clicked()
@@ -3011,45 +3104,55 @@ void MainWindow::on_pushButton_10_clicked()
 void MainWindow::on_pushButton_35_clicked()
 {
     QFile file("/etc/wpa_supplicant/wpa_supplicant.conf");
-       if(file.open(QIODevice::WriteOnly | QIODevice::Text))
-       {
-           QTextStream stream(&file);
-           stream<<"ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev\n";
-           stream<<"update_config=1\n";
-           stream<<"country=IN\n";
-           stream<<"\n";
-           stream<<"network={\n";
-           stream<<"\tssid=";
-           stream<<ui->comboBox->currentText()+"\n";
-           stream<<"\tpsk=\"";
-           stream<<ui->lineEdit_5->text()+"\"\n";
-           stream<<"\tkey_mgmt=WPA-PSK\n";
-           stream<<"}";
-           file.close();
-           QProcess process2;
-           process2.start("sh",QStringList()<<"-c"<<"sudo wpa_cli -i wlan0 reconfigure");
-           process2.waitForFinished();
-       }
+    if(file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        QTextStream stream(&file);
+        stream<<"ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev\n";
+        stream<<"update_config=1\n";
+        stream<<"country=IN\n";
+        stream<<"\n";
+        stream<<"network={\n";
+        stream<<"\tssid=";
+        stream<<ui->comboBox_2->currentText()+"\n";
+        stream<<"\tpsk=\"";
+        stream<<ui->lineEdit_2->text()+"\"\n";
+        stream<<"\tkey_mgmt=WPA-PSK\n";
+        stream<<"}";
+        file.close();
+        QProcess process2;
+        process2.start("sh",QStringList()<<"-c"<<"sudo wpa_cli -i wlan0 reconfigure");
+        process2.waitForFinished();
+    }
 }
 
 void MainWindow::on_pushButton_36_clicked()
 {
     QProcess process1;
-        process1.start("sh",QStringList()<<"-c"<<"hostname -I");//scan list of wifi networks
-        process1.waitForFinished();
-        QString data = process1.readAllStandardOutput();
-        ui->lineEdit_5->setText(data);
+    process1.start("sh",QStringList()<<"-c"<<"hostname -I");//scan list of wifi networks
+    process1.waitForFinished();
+    QString data = process1.readAllStandardOutput();
+    ui->lineEdit_5->setText(data);
 }
 
 void MainWindow::on_toolButton_48_clicked()
 {
     ui->stackedWidget->setCurrentIndex(10);
+    QSqlQuery query;
+    query.prepare("SELECT bmh, mmh, smh FROM config where sno=1");
+    query.exec();
+    while(query.next())
+    {
+        ui->lineEdit_113->setText(query.value(0).toString());
+        ui->lineEdit_114->setText(query.value(1).toString());
+        ui->lineEdit_115->setText(query.value(2).toString());
+    }
 
 }
 
 void MainWindow::on_toolButton_49_clicked()
 {
     ui->stackedWidget->setCurrentIndex(11);
+    timer1->start(1000);
 }
 
 void MainWindow::on_pushButton_37_clicked()
@@ -3063,7 +3166,7 @@ void MainWindow::on_pushButton_37_clicked()
     QThread::msleep(100);
     arduino.i2cWrite(ch,30);
     QThread::msleep(100);
-    mtesttimer->start(1000);
+    mtesttimer->start(500);
 }
 
 
@@ -3079,9 +3182,9 @@ void MainWindow::motor_test()
     qDebug()<<receive;
     if(strncmp(receive,"done",4)==0)
     {
-            mtesttimer->stop();
-            ui->lineEdit_112->setText("Pass");
-            ui->page_15->setDisabled(false);
+        mtesttimer->stop();
+        ui->lineEdit_112->setText("Pass");
+        ui->page_15->setDisabled(false);
 
     }
     else if(strncmp(receive,"merr",4)==0)
@@ -3102,4 +3205,219 @@ void MainWindow::motor_test()
         ui->lineEdit_112->setText("Base Motor Error");
         ui->page_15->setDisabled(false);
     }
+}
+
+
+void MainWindow::on_pushButton_323_clicked()
+{
+    QString s=ui->pushButton_323->text();
+    if(s=="Release Base Motor")
+    {
+        hold_base=1;
+        ui->pushButton_326->setDisabled(true);
+        ui->pushButton_323->setText("Hold Base Motor");
+        Pi2c arduino(7);
+        QString data="rbs";
+        char* ch;
+        QByteArray ba=data.toLatin1();
+        ch=ba.data();
+        QThread::msleep(100);
+        arduino.i2cWrite(ch,30);
+        QThread::msleep(100);
+    }
+    else
+    {
+        hold_base=0;
+        if(hold_base==0 && hold_sleeve==0 && hold_magnet==0)
+            ui->pushButton_326->setDisabled(false);
+        ui->pushButton_323->setText("Release Base Motor");
+        Pi2c arduino(7);
+        QString data="hbs";
+        char* ch;
+        QByteArray ba=data.toLatin1();
+        ch=ba.data();
+        QThread::msleep(100);
+        arduino.i2cWrite(ch,30);
+        QThread::msleep(100);
+    }
+
+}
+
+
+void MainWindow::on_pushButton_324_clicked()
+{
+    QString s=ui->pushButton_324->text();
+    if(s=="Release Magnet Motor")
+    {
+        hold_magnet=1;
+        ui->pushButton_326->setDisabled(true);
+        ui->pushButton_324->setText("Hold Magnet Motor");
+        Pi2c arduino(7);
+        QString data="rmg";
+        char* ch;
+        QByteArray ba=data.toLatin1();
+        ch=ba.data();
+        QThread::msleep(100);
+        arduino.i2cWrite(ch,30);
+        QThread::msleep(100);
+    }
+    else
+    {
+        hold_magnet=0;
+        if(hold_base==0 && hold_sleeve==0 && hold_magnet==0)
+            ui->pushButton_326->setDisabled(false);
+        ui->pushButton_324->setText("Release Magnet Motor");
+        Pi2c arduino(7);
+        QString data="hmg";
+        char* ch;
+        QByteArray ba=data.toLatin1();
+        ch=ba.data();
+        QThread::msleep(100);
+        arduino.i2cWrite(ch,30);
+        QThread::msleep(100);
+    }
+}
+
+void MainWindow::on_pushButton_325_clicked()
+{
+    QString s=ui->pushButton_325->text();
+    if(s=="Release Sleeve Motor")
+    {
+        hold_sleeve=1;
+        ui->pushButton_326->setDisabled(true);
+        ui->pushButton_325->setText("Hold Sleeve Motor");
+        Pi2c arduino(7);
+        QString data="rsl";
+        char* ch;
+        QByteArray ba=data.toLatin1();
+        ch=ba.data();
+        QThread::msleep(100);
+        arduino.i2cWrite(ch,30);
+        QThread::msleep(100);
+    }
+    else
+    {
+        hold_sleeve=0;
+        if(hold_base==0 && hold_sleeve==0 && hold_magnet==0)
+            ui->pushButton_326->setDisabled(false);
+        ui->pushButton_325->setText("Release Sleeve Motor");
+        Pi2c arduino(7);
+        QString data="hsl";
+        char* ch;
+        QByteArray ba=data.toLatin1();
+        ch=ba.data();
+        QThread::msleep(100);
+        arduino.i2cWrite(ch,30);
+        QThread::msleep(100);
+    }
+}
+
+void MainWindow::on_pushButton_326_clicked()
+{
+    ui->page_15->setDisabled(true);
+    Pi2c arduino(7);
+    QString data="cal";
+    char* ch;
+    QByteArray ba=data.toLatin1();
+    ch=ba.data();
+    QThread::msleep(100);
+    arduino.i2cWrite(ch,30);
+    QThread::msleep(100);
+    mtesttimer1->start(500);
+}
+
+
+void MainWindow::motor_test1()
+{
+    Pi2c arduino(7);
+    char receive[30];
+    QThread::msleep(100);
+    arduino.i2cRead(receive,30);
+    QThread::msleep(100);
+    qDebug()<<receive;
+    if(strncmp(receive,"caldone",7)==0)
+    {
+        mtesttimer1->stop();
+        QString str=receive;
+        QStringList list;
+        list=str.split(" ");
+        ui->lineEdit_113->setText(list[1]);
+        ui->lineEdit_114->setText(list[2]);
+        ui->lineEdit_115->setText(list[3]);
+        QSqlQuery query;
+        query.prepare("update config set bmh=:bmh,mmh=:mmh,smh=:smh where sno=1");
+        query.bindValue(":bmh",list[1]);
+        query.bindValue(":mmh",list[2]);
+        query.bindValue(":smh",list[3]);
+        query.exec();
+        ui->lineEdit_112->setText("Pass");
+        ui->page_15->setDisabled(false);
+    }
+    else if(strncmp(receive,"merr",4)==0)
+    {
+        mtesttimer1->stop();
+        ui->lineEdit_112->setText("Magnet Motor Error");
+        ui->page_15->setDisabled(false);
+    }
+    else if(strncmp(receive,"serr",4)==0)
+    {
+        mtesttimer1->stop();
+        ui->lineEdit_112->setText("Sleeve Motor Error");
+        ui->page_15->setDisabled(false);
+    }
+    else if(strncmp(receive,"berr",4)==0)
+    {
+        mtesttimer1->stop();
+        ui->lineEdit_112->setText("Base Motor Error");
+        ui->page_15->setDisabled(false);
+    }
+
+}
+
+void MainWindow::on_pushButton_322_clicked()
+{
+    QString s=ui->pushButton_322->text();
+    QString t=ui->lineEdit_111->text();
+    QString data;
+    if(s=="Start Heating")
+    {
+        ui->pushButton_322->setText("Stop Heating");
+        ui->toolButton->setDisabled(true);
+        ui->toolButton_2->setDisabled(true);
+        ui->toolButton_8->setDisabled(true);
+        if(ui->comboBox_47->currentText()=="Lysis")
+            data="W lys "+t;
+        else if(ui->comboBox_47->currentText()=="Elution")
+            data="W elu "+t;
+        Pi2c arduino(8);
+        char* ch;
+        QByteArray ba=data.toLatin1();
+        ch=ba.data();
+        QThread::msleep(100);
+        arduino.i2cWrite(ch,30);
+        QThread::msleep(100);
+    }
+    else if(s=="Stop Heating")
+    {
+        ui->pushButton_322->setText("Start Heating");
+        ui->toolButton->setDisabled(false);
+        ui->toolButton_2->setDisabled(false);
+        ui->toolButton_8->setDisabled(false);
+        data="W end";
+        Pi2c arduino(8);
+        char* ch;
+        QByteArray ba=data.toLatin1();
+        ch=ba.data();
+        QThread::msleep(100);
+        arduino.i2cWrite(ch,30);
+        QThread::msleep(100);
+    }
+}
+
+void MainWindow::on_pushButton_329_clicked()
+{
+    opt=46;
+    ui->stackedWidget->setCurrentIndex(5);
+    ui->stackedWidget_2->setCurrentIndex(2);
+    ui->lineEdit_145->setText(ui->lineEdit_111->text());
 }
