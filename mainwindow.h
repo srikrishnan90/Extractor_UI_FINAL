@@ -28,7 +28,6 @@ public:
     ~MainWindow();
 
 private slots:
-    void on_toolButton_9_triggered(QAction *arg1);
 
     void on_toolButton_9_clicked();
 
@@ -401,6 +400,8 @@ private slots:
     void on_pushButton_322_clicked();
 
     void on_pushButton_329_clicked();
+
+    void on_toolButton_10_clicked();
 
 private:
     Ui::MainWindow *ui;

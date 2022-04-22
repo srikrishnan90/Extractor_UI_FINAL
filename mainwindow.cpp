@@ -15,6 +15,7 @@ static int total_time=0;
 static int hold_base=0;
 static int hold_magnet=0;
 static int hold_sleeve=0;
+static int clicks=0;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -103,16 +104,12 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::on_toolButton_9_triggered(QAction *arg1)
-{
-
-}
 
 void MainWindow::on_toolButton_9_clicked()
 {
-    auto home = new QWidget(this);
-    auto stp=new QStackedWidget(this);
-    stp->addWidget(home);
+    clicks+=1;
+    if(clicks==3)
+        qApp->exit();
 }
 
 void MainWindow::on_toolButton_3_clicked()
@@ -2958,7 +2955,9 @@ void MainWindow::proc_timer1()
 
 void MainWindow::on_toolButton_7_clicked()
 {
-    qApp->exit();
+    clicks+=1;
+    if(clicks==3)
+        qApp->exit();
 }
 
 void MainWindow::on_pushButton_167_clicked()
@@ -3374,6 +3373,8 @@ void MainWindow::motor_test1()
 
 }
 
+
+
 void MainWindow::on_pushButton_322_clicked()
 {
     QString s=ui->pushButton_322->text();
@@ -3420,4 +3421,13 @@ void MainWindow::on_pushButton_329_clicked()
     ui->stackedWidget->setCurrentIndex(5);
     ui->stackedWidget_2->setCurrentIndex(2);
     ui->lineEdit_145->setText(ui->lineEdit_111->text());
+}
+
+void MainWindow::on_toolButton_10_clicked()
+{
+    ui->stackedWidget->setCurrentIndex(0);
+    ui->toolButton->setVisible(true);
+    ui->toolButton_2->setVisible(true);
+    ui->toolButton_8->setVisible(true);
+    ui->label_91->hide();
 }
