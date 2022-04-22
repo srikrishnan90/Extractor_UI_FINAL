@@ -42,6 +42,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 INCLUDEPATH    += /usr/local/include
+INCLUDEPATH+=$SQLITE/include
 LIBS += -L/usr/local/lib -lwiringPi
 
 RESOURCES += \
