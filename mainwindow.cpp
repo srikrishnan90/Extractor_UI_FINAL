@@ -25,7 +25,7 @@ MainWindow::MainWindow(QWidget *parent) :
     setWindowFlags(Qt::FramelessWindowHint);
 
     QSqlDatabase sqdb = QSqlDatabase::addDatabase("QSQLITE");
-    sqdb.setDatabaseName("/home/pi/git/extractor/ext.db");
+    sqdb.setDatabaseName("/home/pi/extractor_release/ext.db");
     if(!sqdb.open())
     {
         //qDebug() << "Can't Connect to DB !";
@@ -91,7 +91,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
     timer2->start(500);
-    QMovie *movie = new QMovie("/home/pi/git/extractor/icons/animation.gif");
+    QMovie *movie = new QMovie("/home/pi/extractor_release/animation.gif");
     ui->label_18->setMovie(movie);
     movie->start();
 
