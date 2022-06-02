@@ -2390,7 +2390,7 @@ void MainWindow::realtime_temperature()
 
 void MainWindow::processing()
 {
-
+restart:
     Pi2c arduino(7);
     char receive[30];
     QString data="dss";
@@ -2403,7 +2403,11 @@ void MainWindow::processing()
     arduino.i2cRead(receive,30);
     QThread::msleep(100);
     qDebug()<<receive;
-    if(strncmp(receive,"done",4)==0)
+    if(strncmp(receive,"dopen",4)==0)
+    {
+        ui->stackedWidget->setCurrentIndex(7);
+    }
+    else if(strncmp(receive,"done",4)==0)
     {
         ui->stackedWidget->setCurrentIndex(3);
         timer_val=1;
@@ -2576,8 +2580,9 @@ void MainWindow::processing()
     }
     else
     {
-        ui->stackedWidget->setCurrentIndex(7);
+        goto restart;
     }
+
 }
 
 
@@ -2695,6 +2700,7 @@ void MainWindow::init()
         ui->toolButton->setVisible(true);
         ui->toolButton_2->setVisible(true);
         ui->toolButton_8->setVisible(true);
+        ui->label_91->hide();
     }
     else if(strncmp(receive,"serr",4)==0)
     {
@@ -2706,6 +2712,7 @@ void MainWindow::init()
         ui->toolButton->setVisible(true);
         ui->toolButton_2->setVisible(true);
         ui->toolButton_8->setVisible(true);
+        ui->label_91->hide();
     }
     else if(strncmp(receive,"berr",4)==0)
     {
@@ -2717,6 +2724,7 @@ void MainWindow::init()
         ui->toolButton->setVisible(true);
         ui->toolButton_2->setVisible(true);
         ui->toolButton_8->setVisible(true);
+        ui->label_91->hide();
     }
 }
 
